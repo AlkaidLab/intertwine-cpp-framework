@@ -40,7 +40,7 @@ TEST(RouterTest, BindSyncRoutes) {
     req.path = "/api/ping";
     HttpResponse resp;
     http_handler* h = NULL;
-    int rc = service.GetRoute("/api/ping", HTTP_GET, &h);
+    int rc = service.GetRoute(&req, &h);
     ASSERT_EQ(rc, 0);
     ASSERT_TRUE(h != NULL);
     ASSERT_TRUE(h->sync_handler != NULL);
@@ -71,7 +71,7 @@ TEST(RouterTest, MiddlewarePlusHandler) {
     req.path = "/test";
     HttpResponse resp;
     http_handler* h = NULL;
-    int rc = service.GetRoute("/test", HTTP_GET, &h);
+    int rc = service.GetRoute(&req, &h);
     ASSERT_EQ(rc, 0);
     ASSERT_TRUE(h != NULL);
     h->sync_handler(&req, &resp);
@@ -135,7 +135,7 @@ TEST(RouterTest, MigratedPingHandler) {
     req.path = "/api/ping";
     HttpResponse resp;
     http_handler* h = NULL;
-    int rc = service.GetRoute("/api/ping", HTTP_GET, &h);
+    int rc = service.GetRoute(&req, &h);
     ASSERT_EQ(rc, 0);
     ASSERT_TRUE(h != NULL);
     h->sync_handler(&req, &resp);
@@ -168,7 +168,7 @@ TEST(RouterTest, ExceptionGuardMiddleware) {
     req.path = "/api/throw";
     HttpResponse resp;
     http_handler* h = NULL;
-    int rc = service.GetRoute("/api/throw", HTTP_GET, &h);
+    int rc = service.GetRoute(&req, &h);
     ASSERT_EQ(rc, 0);
     ASSERT_TRUE(h != NULL);
     int code = h->sync_handler(&req, &resp);
@@ -197,7 +197,7 @@ TEST(RouterTest, ExceptionGuardNoException) {
     req.path = "/api/ok";
     HttpResponse resp;
     http_handler* h = NULL;
-    int rc = service.GetRoute("/api/ok", HTTP_GET, &h);
+    int rc = service.GetRoute(&req, &h);
     ASSERT_EQ(rc, 0);
     h->sync_handler(&req, &resp);
     EXPECT_EQ(resp.status_code, 200);
@@ -217,7 +217,7 @@ TEST(RouterTest, BindPutRoute) {
     req.path = "/api/config";
     HttpResponse resp;
     http_handler* h = NULL;
-    int rc = service.GetRoute("/api/config", HTTP_PUT, &h);
+    int rc = service.GetRoute(&req, &h);
     ASSERT_EQ(rc, 0);
     ASSERT_TRUE(h != NULL);
     h->sync_handler(&req, &resp);
@@ -238,7 +238,7 @@ TEST(RouterTest, BindDeleteRoute) {
     req.path = "/api/file";
     HttpResponse resp;
     http_handler* h = NULL;
-    int rc = service.GetRoute("/api/file", HTTP_DELETE, &h);
+    int rc = service.GetRoute(&req, &h);
     ASSERT_EQ(rc, 0);
     ASSERT_TRUE(h != NULL);
     h->sync_handler(&req, &resp);
@@ -259,7 +259,7 @@ TEST(RouterTest, BindPatchRoute) {
     req.path = "/api/acl";
     HttpResponse resp;
     http_handler* h = NULL;
-    int rc = service.GetRoute("/api/acl", HTTP_PATCH, &h);
+    int rc = service.GetRoute(&req, &h);
     ASSERT_EQ(rc, 0);
     ASSERT_TRUE(h != NULL);
     h->sync_handler(&req, &resp);

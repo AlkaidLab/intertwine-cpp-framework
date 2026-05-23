@@ -59,6 +59,22 @@ bash build.sh --install-dir /path       # 指定安装路径
 
 产物：`<install-dir>/lib/libalkaidlab_fw.a` + `<install-dir>/include/fw/` + `<install-dir>/lib/cmake/alkaidlab_fw/alkaidlab_fw-config.cmake`
 
+### 修改 libhv 源码后强制重建
+
+libhv 走**缓存式构建**：build.sh 检测到 `build_cache/libhv_install/lib/libhv_static.a` 存在就跳过编译。`--clean` 仅清 fw 自身的 build 目录，**不清 libhv 缓存**。
+
+修改 libhv 源码（cherry-pick、子模块更新等）后必须手动清理：
+
+```bash
+# 在项目根执行
+rm -rf third_party/alkaidlab_framework/build_cache/libhv_install/   # libhv 安装产物（关键）
+rm -rf third_party/alkaidlab_framework/third_party/libhv/build/     # libhv 编译中间产物
+rm -rf third_party/alkaidlab_framework/build/                       # fw 编译目录（需重链）
+rm -rf build_cache/alkaidlab_framework_install/                     # fw 已安装产物
+find build/ -mindepth 1 -maxdepth 1 ! -name 'vcpkg_installed' -exec rm -rf {} +  # 主工程
+bash deploy/dev_install.sh --backend-only
+```
+
 ## 设计决策
 
 1. **pimpl 隔离**：Context.hpp 零 libhv `#include`，业务层无需接触 libhv 类型
