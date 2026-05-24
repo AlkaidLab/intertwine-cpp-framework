@@ -6,7 +6,6 @@
 #include "StreamTransfer.hpp"
 #include "fw/Context.hpp"
 #include "fw/HttpConstants.hpp"
-#include "fw/Logger.hpp"
 #include <hv/HttpResponseWriter.h>
 #include <fstream>
 #include <memory>
@@ -72,7 +71,6 @@ void finish(std::shared_ptr<TransferState>& s, bool success) {
 void pump(std::shared_ptr<TransferState> s) {
     if (s->finished) { return; }             // 防止 finish 后重入
     if (!s->writer->isConnected()) {
-        LOG_WARN("[stream.debug] pump: writer NOT connected, remaining=" + std::to_string(s->remaining));
         finish(s, false);
         return;
     }
@@ -84,12 +82,6 @@ void pump(std::shared_ptr<TransferState> s) {
     s->file.read(buf, toRead);
     std::streamsize got = s->file.gcount();
     if (got <= 0) {
-        LOG_WARN("[stream.debug] pump: read got<=0 (toRead=" + std::to_string(toRead)
-                 + " got=" + std::to_string(static_cast<long long>(got))
-                 + " remaining=" + std::to_string(s->remaining)
-                 + " good=" + (s->file.good() ? "1" : "0")
-                 + " eof=" + (s->file.eof() ? "1" : "0")
-                 + " fail=" + (s->file.fail() ? "1" : "0") + ")");
         finish(s, false);
         return;
     }
@@ -107,9 +99,6 @@ void pump(std::shared_ptr<TransferState> s) {
 
     int ret = s->writer->WriteBody(buf, static_cast<int>(got));
     if (ret < 0) {
-        LOG_WARN("[stream.debug] pump: WriteBody ret=" + std::to_string(ret)
-                 + " got=" + std::to_string(static_cast<long long>(got))
-                 + " remaining=" + std::to_string(s->remaining));
         finish(s, false);
         return;
     }
