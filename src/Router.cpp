@@ -87,6 +87,7 @@ makeAsyncHandler(const Handler& handler,
         if (tracker) tracker(+1);
 
         auto task = [chain, handler, httpCtx, tracker]() {
+            bool streamingHandoff = false;
             try {
                 const HttpContextPtr* ptr = &httpCtx;
                 Context ctx(static_cast<const void*>(ptr));
@@ -95,10 +96,14 @@ makeAsyncHandler(const Handler& handler,
                     h(c);
                     return c.status() ? c.status() : 200;
                 });
+                streamingHandoff = ctx.isStreamingHandoff();
             } catch (...) {
                 /* Prevent exception from leaking into C event loop */
             }
-            if (httpCtx->writer) {
+            /* 流式接管：StreamTransfer 等异步写入器自行负责 End() 的调用时机。
+             * 若此处过早调用 End()，对 Connection: close 请求会立即关 socket
+             * 导致后续 EPOLLOUT-driven WriteBody 失败。 */
+            if (!streamingHandoff && httpCtx->writer) {
                 httpCtx->writer->End();
             }
             if (tracker) tracker(-1);

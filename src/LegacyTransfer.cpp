@@ -1,6 +1,7 @@
 #include "LegacyTransfer.hpp"
 #include "fw/Context.hpp"
 #include "fw/HttpConstants.hpp"
+#include "fw/Logger.hpp"
 #include <fstream>
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
@@ -56,10 +57,19 @@ void LegacyTransfer::send(Context& c, const TransferParams& params) {
     if (sendLen < kStreamThreshold) {
         if (isRange) {
             std::ifstream ifs(params.physicalPath.c_str(), std::ios::binary);
-            if (ifs && ifs.seekg(sendStart) && ifs.good()) {
+            bool openOk = static_cast<bool>(ifs);
+            bool seekOk = false;
+            bool goodAfterSeek = false;
+            int64_t gotBytes = -1;
+            if (openOk) {
+                seekOk = static_cast<bool>(ifs.seekg(sendStart));
+                goodAfterSeek = ifs.good();
+            }
+            if (openOk && seekOk && goodAfterSeek) {
                 std::string rangeBody(static_cast<size_t>(sendLen), '\0');
                 ifs.read(&rangeBody[0], sendLen);
-                if (static_cast<int64_t>(ifs.gcount()) == sendLen) {
+                gotBytes = static_cast<int64_t>(ifs.gcount());
+                if (gotBytes == sendLen) {
                     c.setStatus(HttpStatus::PartialContent);
                     c.setHeader("Content-Range", "bytes "
                         + std::to_string(sendStart) + "-"
@@ -70,6 +80,15 @@ void LegacyTransfer::send(Context& c, const TransferParams& params) {
                 }
             }
             if (!success) {
+                /* 临时调试：定位 via 浏览器 Range 下载失败的具体阶段 */
+                LOG_WARN("[legacy.range.debug] FAILED path=" + params.physicalPath
+                         + " sendStart=" + std::to_string(sendStart)
+                         + " sendLen=" + std::to_string(sendLen)
+                         + " fileSize=" + std::to_string(params.fileSize)
+                         + " openOk=" + (openOk ? "1" : "0")
+                         + " seekOk=" + (seekOk ? "1" : "0")
+                         + " goodAfterSeek=" + (goodAfterSeek ? "1" : "0")
+                         + " gotBytes=" + std::to_string(gotBytes));
                 c.error(HttpStatus::InternalError, "internal");
             }
         } else {

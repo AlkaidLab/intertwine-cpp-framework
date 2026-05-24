@@ -6,6 +6,7 @@
 #include "StreamTransfer.hpp"
 #include "fw/Context.hpp"
 #include "fw/HttpConstants.hpp"
+#include "fw/Logger.hpp"
 #include <hv/HttpResponseWriter.h>
 #include <fstream>
 #include <memory>
@@ -71,6 +72,7 @@ void finish(std::shared_ptr<TransferState>& s, bool success) {
 void pump(std::shared_ptr<TransferState> s) {
     if (s->finished) { return; }             // 防止 finish 后重入
     if (!s->writer->isConnected()) {
+        LOG_WARN("[stream.debug] pump: writer NOT connected, remaining=" + std::to_string(s->remaining));
         finish(s, false);
         return;
     }
@@ -82,6 +84,12 @@ void pump(std::shared_ptr<TransferState> s) {
     s->file.read(buf, toRead);
     std::streamsize got = s->file.gcount();
     if (got <= 0) {
+        LOG_WARN("[stream.debug] pump: read got<=0 (toRead=" + std::to_string(toRead)
+                 + " got=" + std::to_string(static_cast<long long>(got))
+                 + " remaining=" + std::to_string(s->remaining)
+                 + " good=" + (s->file.good() ? "1" : "0")
+                 + " eof=" + (s->file.eof() ? "1" : "0")
+                 + " fail=" + (s->file.fail() ? "1" : "0") + ")");
         finish(s, false);
         return;
     }
@@ -99,6 +107,9 @@ void pump(std::shared_ptr<TransferState> s) {
 
     int ret = s->writer->WriteBody(buf, static_cast<int>(got));
     if (ret < 0) {
+        LOG_WARN("[stream.debug] pump: WriteBody ret=" + std::to_string(ret)
+                 + " got=" + std::to_string(static_cast<long long>(got))
+                 + " remaining=" + std::to_string(s->remaining));
         finish(s, false);
         return;
     }
@@ -178,6 +189,11 @@ void StreamTransfer::send(Context& c, const TransferParams& params) {
 
     /* 发送响应头 → 写完成事件 → pump() 开始发送数据 */
     c.endHeaders("Content-Length", sendLen);
+
+    /* 接管响应生命周期：阻止 fw 异步分发器在 handler 返回后立即调用 writer->End()。
+     * 对 Connection: close 请求，过早 End() 会触发 socket close，
+     * 导致后续 EPOLLOUT-driven pump() 看到 isConnected()=false。 */
+    c.markStreamingHandoff();
 
     /* send() 立即返回，IO 线程驱动后续 pump */
 }

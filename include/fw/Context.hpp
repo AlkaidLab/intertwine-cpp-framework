@@ -134,6 +134,19 @@ class Context {
      *  Returns empty shared_ptr if no writer is available (sync handler). */
     std::shared_ptr<void> writerOwnership() const;
 
+    /** Mark this async response as taken over by a streaming handler.
+     *  When set, the async dispatcher MUST NOT call writer->End() after the
+     *  handler returns — the streaming code (e.g. StreamTransfer) is responsible
+     *  for calling End() when all body data has been pumped out.
+     *
+     *  Without this flag, calling End() prematurely will close the socket when
+     *  the client used Connection: close, causing later EPOLLOUT-driven writes
+     *  to fail with isConnected()=false. */
+    void markStreamingHandoff();
+
+    /** Whether the handler has handed off response lifecycle to a streaming writer. */
+    bool isStreamingHandoff() const;
+
     Context(const Context&) = delete;
     Context& operator=(const Context&) = delete;
 

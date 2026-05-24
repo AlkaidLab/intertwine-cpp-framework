@@ -12,16 +12,17 @@ struct Context::Impl {
     HttpResponse* resp;
     HttpContextPtr httpCtx; // null for sync handlers
     std::unordered_map<std::string, std::string> data;
+    bool streamingHandoff;
 
     /* Owned objects for test builder — keeps req/resp alive */
     HttpRequest*  ownedReq;
     HttpResponse* ownedResp;
 
     Impl(HttpRequest* r, HttpResponse* s)
-        : req(r), resp(s), ownedReq(0), ownedResp(0) {}
+        : req(r), resp(s), streamingHandoff(false), ownedReq(0), ownedResp(0) {}
     Impl(const HttpContextPtr& ctx)
         : req(ctx->request.get()), resp(ctx->response.get()), httpCtx(ctx),
-          ownedReq(0), ownedResp(0) {}
+          streamingHandoff(false), ownedReq(0), ownedResp(0) {}
 
     ~Impl() {
         delete ownedReq;
@@ -324,6 +325,14 @@ std::shared_ptr<void> Context::writerOwnership() const {
     if (hasWriter())
         return m_impl->httpCtx->writer;
     return std::shared_ptr<void>();
+}
+
+void Context::markStreamingHandoff() {
+    m_impl->streamingHandoff = true;
+}
+
+bool Context::isStreamingHandoff() const {
+    return m_impl->streamingHandoff;
 }
 
 /* ── Private constructor for TestContextBuilder ── */
