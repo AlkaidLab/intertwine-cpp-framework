@@ -4,7 +4,11 @@
 #include <boost/system/error_code.hpp>
 #include <boost/thread.hpp>
 #include <cstring>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
+#endif
 
 namespace alkaidlab {
 namespace fw {
