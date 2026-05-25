@@ -11,6 +11,20 @@ if(NOT TARGET alkaidlab_fw)
         IMPORTED_LOCATION "${ALKAIDLAB_FW_INSTALL_PREFIX}/lib/libalkaidlab_fw.a"
         INTERFACE_INCLUDE_DIRECTORIES "${ALKAIDLAB_FW_INSTALL_PREFIX}/include"
     )
+    # Windows: 把构建时设置的 PUBLIC compile defs / options 也传给消费方。
+    # 这些设置阻止 windows.h 注入 min/max/ERROR 等宏，并补齐 POSIX 兼容垫片。
+    if(WIN32)
+        set_property(TARGET alkaidlab_fw APPEND PROPERTY
+            INTERFACE_COMPILE_DEFINITIONS
+                NOMINMAX
+                WIN32_LEAN_AND_MEAN
+                NOGDI
+        )
+        set_property(TARGET alkaidlab_fw APPEND PROPERTY
+            INTERFACE_COMPILE_OPTIONS
+                "-include" "fw/WinPosixShim.hpp"
+        )
+    endif()
 endif()
 
 # ---- 传递依赖 ----
