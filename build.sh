@@ -91,7 +91,10 @@ if [[ -z "$VCPKG_TRIPLET" ]]; then
 fi
 OPENSSL_ROOT="$VCPKG_INSTALLED/$VCPKG_TRIPLET"
 
-if [[ ! -f "$OPENSSL_ROOT/lib/libssl.a" ]]; then
+# OpenSSL 检测：静态用 libssl.a，MinGW 动态 triplet 用 libssl.dll.a
+_openssl_ok() { ls "$OPENSSL_ROOT/lib/libssl"* 2>/dev/null | grep -q .; }
+
+if ! _openssl_ok; then
     echo "  安装 vcpkg 依赖..."
     "$VCPKG_DIR/vcpkg" install \
         --triplet="$VCPKG_TRIPLET" \
@@ -99,7 +102,7 @@ if [[ ! -f "$OPENSSL_ROOT/lib/libssl.a" ]]; then
         --x-manifest-root="$FW_DIR"
 fi
 
-if [[ ! -f "$OPENSSL_ROOT/lib/libssl.a" ]]; then
+if ! _openssl_ok; then
     echo "错误：OpenSSL 安装失败，检查 vcpkg 日志"
     exit 1
 fi
