@@ -56,6 +56,19 @@ set_target_properties(alkaidlab_fw PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
+# Windows 宏污染防御: 仅保留 LogLevel::ERROR / std::min / std::max 等标识符
+#   NOMINMAX            — 禁用 windows.h 的 min/max 宏
+#   WIN32_LEAN_AND_MEAN — 米 windows.h 只包含核心部分
+#   NOGDI               — 禁用 wingdi.h 里的 ERROR 等绘图宏
+# (DELETE 来自 winnt.h 不可避免, 需要源码层面用不同名字)
+if(WIN32)
+    target_compile_definitions(alkaidlab_fw PUBLIC
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+        NOGDI
+    )
+endif()
+
 # 公开头文件目录：使用方 #include "fw/Context.hpp"
 target_include_directories(alkaidlab_fw PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

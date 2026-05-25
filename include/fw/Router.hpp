@@ -74,7 +74,7 @@ public:
     size_t routeCount() const { return m_routes.size(); }
 
 private:
-    enum class Method { GET, POST, PUT, DELETE, PATCH };
+    enum class Method { GET, POST, PUT, DEL, PATCH };
 
     struct Route {
         Method method;

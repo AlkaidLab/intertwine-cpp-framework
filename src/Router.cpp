@@ -2,7 +2,6 @@
 #include <hv/HttpServer.h>
 #include <hv/HttpResponseWriter.h>
 #include <utility>  // std::move
-#include "fw/WindowsCompat.hpp"  // 必须在 libhv (windows.h) 之后, 清理 DELETE 宏污染
 
 namespace alkaidlab {
 namespace fw {
@@ -32,7 +31,7 @@ void Router::put(const char* path, Handler handler) {
 }
 
 void Router::del(const char* path, Handler handler) {
-    Route r; r.method = Method::DELETE; r.path = path; r.handler = std::move(handler); r.async = false;
+    Route r; r.method = Method::DEL; r.path = path; r.handler = std::move(handler); r.async = false;
     m_routes.push_back(std::move(r));
 }
 
@@ -135,7 +134,7 @@ void Router::bind(hv::HttpService& service) {
             case Method::GET:    service.GET(r.path.c_str(), h);    break;
             case Method::POST:   service.POST(r.path.c_str(), h);   break;
             case Method::PUT:    service.PUT(r.path.c_str(), h);    break;
-            case Method::DELETE: service.Delete(r.path.c_str(), h); break;
+            case Method::DEL: service.Delete(r.path.c_str(), h); break;
             case Method::PATCH:  service.PATCH(r.path.c_str(), h);  break;
         }
     }
