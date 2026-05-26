@@ -156,6 +156,10 @@ install(TARGETS alkaidlab_fw
     LIBRARY DESTINATION lib
 )
 install(DIRECTORY include/fw DESTINATION include)
+# libhv.a 也安装进 install prefix，确保 cmake config 使用相对路径后仍可找到
+if(LIBHV_LIB AND EXISTS "${LIBHV_LIB}")
+    install(FILES "${LIBHV_LIB}" DESTINATION lib RENAME libhv.a)
+endif()
 
 # 生成 cmake config：消费方 find_package(alkaidlab_fw) 即可获得完整依赖
 # 记录构建时的 libhv 路径和依赖信息

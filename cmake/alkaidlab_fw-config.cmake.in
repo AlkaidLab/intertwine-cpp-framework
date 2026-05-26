@@ -41,7 +41,8 @@ endif()
 find_package(Threads QUIET)
 
 # libhv（fw 内部使用）
-set(_FW_LIBHV_LIB "@_FW_LIBHV_LIB_PATH@")
+# libhv.a 在 install 时被拷贝到 install prefix/lib/，使用相对路径确保跨机器可移植
+set(_FW_LIBHV_LIB "${ALKAIDLAB_FW_INSTALL_PREFIX}/lib/libhv.a")
 set(_FW_LIBHV_INCLUDE "@_FW_LIBHV_INCLUDE@")
 if(NOT TARGET _fw_libhv)
     if(EXISTS "${_FW_LIBHV_LIB}")
