@@ -47,8 +47,9 @@ void LegacyTransfer::send(Context& c, const TransferParams& params) {
     auto startTime = m_stats.recordStart(sendLen);
 
     /* ── Headers ── */
+    std::string disposition = params.inlineDisposition ? "inline" : "attachment";
     c.setHeader("Content-Disposition",
-                "attachment; filename=\"" + safeFilenameForHeader(params.displayName) + "\"");
+                disposition + "; filename=\"" + safeFilenameForHeader(params.displayName) + "\"");
     c.setHeader("Accept-Ranges", "bytes");
     c.setContentTypeByFilename(params.displayName.c_str());
 

@@ -45,6 +45,7 @@ struct TransferStats {
 struct TransferParams {
     std::string physicalPath;
     std::string displayName;     // Content-Disposition + MIME 推导
+    bool inlineDisposition;      // true = inline preview, false = attachment download
     int64_t fileSize;
     int64_t rangeStart;          // Range 起始（-1 = 无 Range）
     int64_t rangeEnd;            // Range 结束（-1 = 无 Range）
@@ -54,7 +55,7 @@ struct TransferParams {
     boost::function<void(bool success)> onComplete;
 
     TransferParams()
-        : fileSize(0), rangeStart(-1), rangeEnd(-1) {}
+        : inlineDisposition(false), fileSize(0), rangeStart(-1), rangeEnd(-1) {}
 };
 
 /** 服务端文件传输策略接口（与 ITransport 客户端传输对称） */

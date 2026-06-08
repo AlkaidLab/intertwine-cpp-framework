@@ -33,8 +33,9 @@ void AccelTransfer::send(Context& c, const TransferParams& params) {
     }
     c.setHeader("X-Accel-Redirect", m_prefix + fileId);
     c.setContentTypeByFilename(params.displayName.c_str());
+    std::string disposition = params.inlineDisposition ? "inline" : "attachment";
     c.setHeader("Content-Disposition",
-                "attachment; filename=\"" + safeFilenameForHeader(params.displayName) + "\"");
+                disposition + "; filename=\"" + safeFilenameForHeader(params.displayName) + "\"");
     c.setStatus(HttpStatus::Ok);
     c.setBody("");
 

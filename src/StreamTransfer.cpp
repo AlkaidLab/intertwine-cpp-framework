@@ -150,8 +150,9 @@ void StreamTransfer::send(Context& c, const TransferParams& params) {
     state->startTime = m_stats.recordStart(sendLen);
 
     /* 设置响应头（Context 仍存活） */
+    std::string disposition = params.inlineDisposition ? "inline" : "attachment";
     c.setHeader("Content-Disposition",
-                "attachment; filename=\"" + safeFilenameForHeader(params.displayName) + "\"");
+                disposition + "; filename=\"" + safeFilenameForHeader(params.displayName) + "\"");
     c.setHeader("Accept-Ranges", "bytes");
     c.setContentTypeByFilename(params.displayName.c_str());
 
