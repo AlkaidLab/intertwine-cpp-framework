@@ -103,7 +103,8 @@ makeAsyncHandler(const Handler& handler,
             /* 流式接管：StreamTransfer 等异步写入器自行负责 End() 的调用时机。
              * 若此处过早调用 End()，对 Connection: close 请求会立即关 socket
              * 导致后续 EPOLLOUT-driven WriteBody 失败。 */
-            if (!streamingHandoff && httpCtx->writer) {
+            if (!streamingHandoff && httpCtx->writer &&
+                httpCtx->writer->state == hv::HttpResponseWriter::SEND_BEGIN) {
                 httpCtx->writer->End();
             }
             if (tracker) tracker(-1);

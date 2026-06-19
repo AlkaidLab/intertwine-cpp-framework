@@ -7,6 +7,47 @@
 namespace alkaidlab {
 namespace fw {
 
+void WebSocketTransport::setupClientCallbacks() {
+    if (!m_client) {
+        return;
+    }
+
+    m_client->onopen = [this]() {
+        m_connected.store(true, boost::memory_order_release);
+        LOG_DEBUG("WebSocketTransport: Connection opened");
+
+        // 连接建立时统一设置超时
+        if (m_client) {
+            auto channel = m_client->channel;
+            if (channel) {
+                channel->setReadTimeout(m_readTimeout);
+                channel->setWriteTimeout(m_writeTimeout);
+                channel->setCloseTimeout(m_closeTimeout);
+                channel->setKeepaliveTimeout(m_keepaliveTimeout);
+            } else {
+                LOG_WARN("WebSocketTransport: Channel is null, skipping timeout setup");
+            }
+        }
+
+        m_connectionCondition.notify_all();
+    };
+
+    m_client->onclose = [this]() {
+        m_connected.store(false, boost::memory_order_release);
+        m_connectFailed.store(true, boost::memory_order_release);
+        LOG_DEBUG("WebSocketTransport: Connection closed");
+        m_connectionCondition.notify_all();
+    };
+
+    // 设置消息接收回调（只访问队列，有独立的锁）
+    m_client->onmessage = [this](const std::string& msg) {
+        boost::lock_guard<boost::mutex> lock(m_messageMutex);
+        m_messageQueue.push(msg);
+        m_messageCondition.notify_one();
+        LOG_DEBUG("WebSocketTransport: Received message, size=" + std::to_string(msg.size()));
+    };
+}
+
 WebSocketTransport::WebSocketTransport()
     : m_connectTimeout(3000)
     , m_readTimeout(30000)
@@ -25,51 +66,7 @@ WebSocketTransport::WebSocketTransport()
         m_client = std::unique_ptr<hv::WebSocketClient>(new hv::WebSocketClient());
         if (m_client) {
             configureSsl();
-            
-            // // 配置自动重连机制
-            // reconn_setting_t reconn;
-            // reconn_setting_init(&reconn);
-            // reconn.min_delay = 1000;   // 最小重连延迟 1 秒
-            // reconn.max_delay = 10000;  // 最大重连延迟 10 秒
-            // reconn.delay_policy = 2;   // 指数退避策略
-            // m_client->setReconnect(&reconn);
-            
-            m_client->onopen = [this]() {
-                m_connected.store(true, boost::memory_order_release);
-                LOG_DEBUG("WebSocketTransport: Connection opened");
-                
-                // 连接建立时统一设置超时
-                if (m_client) {
-                    auto channel = m_client->channel;
-                    if (channel) {
-                        channel->setReadTimeout(m_readTimeout);
-                        channel->setWriteTimeout(m_writeTimeout);
-                        channel->setCloseTimeout(m_closeTimeout);
-                        channel->setKeepaliveTimeout(m_keepaliveTimeout);
-                    } else {
-                        LOG_WARN("WebSocketTransport: Channel is null, skipping timeout setup");
-                    }
-                }
-                
-                m_connectionCondition.notify_all();
-            };
-            
-            m_client->onclose = [this]() {
-                m_connected.store(false, boost::memory_order_release);
-                m_connectFailed.store(true, boost::memory_order_release);
-                LOG_DEBUG("WebSocketTransport: Connection closed");
-                // 通知等待的线程（连接失败）
-                m_connectionCondition.notify_all();
-            };
-            
-            // 设置消息接收回调（只访问队列，有独立的锁）
-            m_client->onmessage = [this](const std::string& msg) {
-                boost::lock_guard<boost::mutex> lock(m_messageMutex);
-                m_messageQueue.push(msg);
-                m_messageCondition.notify_one();
-                LOG_DEBUG("WebSocketTransport: Received message, size=" + std::to_string(msg.size()));
-            };
-            
+            setupClientCallbacks();
             m_connected.store(false, boost::memory_order_release);
         } else {
             m_connected.store(false, boost::memory_order_release);
@@ -94,49 +91,7 @@ WebSocketTransport::WebSocketTransport(const SslConfig& sslConfig)
         m_client = std::unique_ptr<hv::WebSocketClient>(new hv::WebSocketClient());
         if (m_client) {
             configureSsl();
-            
-            // // 配置自动重连机制
-            // reconn_setting_t reconn;
-            // reconn_setting_init(&reconn);
-            // reconn.min_delay = 1000;   // 最小重连延迟 1 秒
-            // reconn.max_delay = 10000;  // 最大重连延迟 10 秒
-            // reconn.delay_policy = 2;   // 指数退避策略
-            // m_client->setReconnect(&reconn);
-            
-            m_client->onopen = [this]() {
-                m_connected.store(true, boost::memory_order_release);
-                LOG_DEBUG("WebSocketTransport: Connection opened");
-                
-                // 连接建立时统一设置超时
-                if (m_client) {
-                    auto channel = m_client->channel;
-                    if (channel) {
-                        channel->setReadTimeout(m_readTimeout);
-                        channel->setWriteTimeout(m_writeTimeout);
-                        channel->setCloseTimeout(m_closeTimeout);
-                        channel->setKeepaliveTimeout(m_keepaliveTimeout);
-                    } else {
-                        LOG_WARN("WebSocketTransport: Channel is null, skipping timeout setup");
-                    }
-                }
-                
-                m_connectionCondition.notify_all();
-            };
-            
-            m_client->onclose = [this]() {
-                m_connected.store(false, boost::memory_order_release);
-                LOG_DEBUG("WebSocketTransport: Connection closed");
-                m_connectionCondition.notify_all();
-            };
-            
-            // 设置消息接收回调（只访问队列，有独立的锁）
-            m_client->onmessage = [this](const std::string& msg) {
-                boost::lock_guard<boost::mutex> lock(m_messageMutex);
-                m_messageQueue.push(msg);
-                m_messageCondition.notify_one();
-                LOG_DEBUG("WebSocketTransport: Received message, size=" + std::to_string(msg.size()));
-            };
-            
+            setupClientCallbacks();
             m_connected.store(false, boost::memory_order_release);
         } else {
             m_connected.store(false, boost::memory_order_release);
@@ -304,6 +259,35 @@ int WebSocketTransport::sendRequest(const Request& req, Response& resp) {
         resp.errorMessage = "Only ws:// and wss:// schemes are supported";
         LOG_ERROR("WebSocketTransport::sendRequest: Unsupported scheme: " + scheme);
         return -1;
+    }
+
+    bool recreatedClient = false;
+    {
+        boost::lock_guard<boost::mutex> lock(m_clientMutex);
+        if (!m_client) {
+            try {
+                m_client = std::unique_ptr<hv::WebSocketClient>(new hv::WebSocketClient());
+                if (!m_client) {
+                    resp.statusCode = -1;
+                    resp.errorMessage = "Failed to create WebSocketClient";
+                    LOG_ERROR("WebSocketTransport::sendRequest: Failed to create WebSocketClient");
+                    return -1;
+                }
+                setupClientCallbacks();
+                m_connected.store(false, boost::memory_order_release);
+                m_connectFailed.store(false, boost::memory_order_release);
+                m_currentUrl.clear();
+                recreatedClient = true;
+            } catch (const std::exception& e) {
+                resp.statusCode = -1;
+                resp.errorMessage = "Failed to recreate WebSocketClient: " + std::string(e.what());
+                LOG_ERROR("WebSocketTransport::sendRequest: Failed to recreate WebSocketClient: " + std::string(e.what()));
+                return -1;
+            }
+        }
+    }
+    if (recreatedClient) {
+        configureSsl();
     }
     
     // 检查是否需要重新连接
@@ -528,40 +512,36 @@ bool WebSocketTransport::connect() {
 
 void WebSocketTransport::disconnect() {
     LOG_DEBUG("WebSocketTransport::disconnect: Disconnecting...");
-    
-    // 使用 unique_lock 以便手动控制锁的释放和获取
-    boost::unique_lock<boost::mutex> lock(m_clientMutex);
-    
-    if (m_client) {
-        // 先设置连接状态为false
+
+    std::unique_ptr<hv::WebSocketClient> clientToClose;
+    {
+        boost::unique_lock<boost::mutex> lock(m_clientMutex);
+        if (m_client) {
+            // 先设置连接状态为 false，并摘掉捕获 this 的回调。
+            // close() 之后 libhv 仍可能派发 onclose/onmessage，不能让它们访问已析构对象。
+            m_client->onopen = nullptr;
+            m_client->onclose = nullptr;
+            m_client->onmessage = nullptr;
+            clientToClose = std::move(m_client);
+        }
         m_connected.store(false, boost::memory_order_release);
-        
-        // 释放锁，然后调用 close()，避免死锁
-        // close() 可能需要等待事件循环完成，而事件循环的回调可能需要访问原子变量
-        // 由于回调只访问原子变量和队列（有独立的锁），所以不需要持有 m_clientMutex
-        lock.unlock();
-        
+        m_connectFailed.store(true, boost::memory_order_release);
+        m_currentUrl.clear();
+    }
+
+    if (clientToClose) {
         try {
             LOG_DEBUG("WebSocketTransport::disconnect: Calling close() without lock...");
-            m_client->close();
+            clientToClose->close();
             LOG_DEBUG("WebSocketTransport::disconnect: close() returned");
         } catch (const std::exception& e) {
             LOG_ERROR("WebSocketTransport::disconnect: Exception during close: " + std::string(e.what()));
         } catch (...) {
             LOG_ERROR("WebSocketTransport::disconnect: Unknown exception during close");
         }
-        
-        // 重新获取锁
-        lock.lock();
-        LOG_DEBUG("WebSocketTransport::disconnect: Lock re-acquired");
-        
-        // 重置客户端对象，避免析构时卡住
-        m_client.reset();
         LOG_DEBUG("WebSocketTransport::disconnect: Client reset");
     }
-    
-    m_currentUrl.clear();
-    
+
     // 清空消息队列并通知等待的线程
     {
         boost::lock_guard<boost::mutex> msgLock(m_messageMutex);

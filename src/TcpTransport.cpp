@@ -475,52 +475,44 @@ bool TcpTransport::connect() {
 
 void TcpTransport::disconnect() {
     LOG_DEBUG("TcpTransport::disconnect: Disconnecting...");
-    
-    // 使用 unique_lock 以便手动控制锁的释放和获取
-    boost::unique_lock<boost::mutex> lock(m_clientMutex);
-    
-    if (m_client) {
-        // 先设置连接状态为false
+
+    std::unique_ptr<hv::TcpClient> clientToClose;
+    bool needStop = false;
+    {
+        boost::unique_lock<boost::mutex> lock(m_clientMutex);
+        if (m_client) {
+            needStop = !m_currentHost.empty() || m_currentPort != 0;
+            // 析构/主动断开前摘掉捕获 this 的回调，再把 client 移出成员。
+            m_client->onConnection = nullptr;
+            m_client->onMessage = nullptr;
+            clientToClose = std::move(m_client);
+        }
         m_connected.store(false, boost::memory_order_release);
-        
-        // 检查是否有活动的连接（通过检查当前连接参数）
-        // 如果没有连接参数，说明客户端从未成功启动，不需要调用 stop()
-        bool needStop = !m_currentHost.empty() || m_currentPort != 0;
-        
+        m_connectFailed.store(true, boost::memory_order_release);
+        m_currentHost.clear();
+        m_currentPort = 0;
+    }
+
+    if (clientToClose) {
         if (needStop) {
-            // 释放锁，然后调用 stop()，避免死锁
-            // stop() 可能需要等待事件循环完成，而事件循环的回调可能需要访问原子变量
-            // 由于回调只访问原子变量和队列（有独立的锁），所以不需要持有 m_clientMutex
-            lock.unlock();
-            
             try {
                 LOG_DEBUG("TcpTransport::disconnect: Calling stop() without lock...");
-                m_client->stop();
+                clientToClose->stop();
                 LOG_DEBUG("TcpTransport::disconnect: stop() returned");
                 
-                m_client->closesocket();
+                clientToClose->closesocket();
                 LOG_DEBUG("TcpTransport::disconnect: closesocket() returned");
             } catch (const std::exception& e) {
                 LOG_ERROR("TcpTransport::disconnect: Exception during stop/close: " + std::string(e.what()));
             } catch (...) {
                 LOG_ERROR("TcpTransport::disconnect: Unknown exception during stop/close");
             }
-            
-            // 重新获取锁
-            lock.lock();
-            LOG_DEBUG("TcpTransport::disconnect: Lock re-acquired");
         } else {
             LOG_DEBUG("TcpTransport::disconnect: Client never started, skipping stop()");
         }
-        
-        // 重置客户端对象，避免析构时卡住
-        m_client.reset();
         LOG_DEBUG("TcpTransport::disconnect: Client reset");
     }
-    
-    m_currentHost.clear();
-    m_currentPort = 0;
-    
+
     // 清空接收队列并通知等待的线程
     {
         boost::lock_guard<boost::mutex> bufferLock(m_bufferMutex);
