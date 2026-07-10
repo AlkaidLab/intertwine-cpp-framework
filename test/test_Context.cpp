@@ -241,6 +241,22 @@ TEST_F(ContextKV, SetCookieStrict) {
     EXPECT_TRUE(found);
 }
 
+TEST_F(ContextKV, SetCookieSecure) {
+    Context ctx(&req, &resp);
+    ctx.setCookie("sid", "abc", "/", 60, true, 1, true);
+    ASSERT_FALSE(resp.cookies.empty());
+    bool found = false;
+    for (size_t i = 0; i < resp.cookies.size(); ++i) {
+        if (resp.cookies[i].name == "sid") {
+            EXPECT_TRUE(resp.cookies[i].httponly);
+            EXPECT_TRUE(resp.cookies[i].secure);
+            EXPECT_EQ(resp.cookies[i].samesite, HttpCookie::Lax);
+            found = true;
+        }
+    }
+    EXPECT_TRUE(found);
+}
+
 // -- httpVersion() / methodEnum() --
 
 TEST_F(ContextKV, HttpVersion) {

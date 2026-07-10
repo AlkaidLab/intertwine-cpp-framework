@@ -114,10 +114,14 @@ class Context {
     const std::string& cookie(const char* name) const;
 
     /** Set a response cookie with common options.
-     *  @param sameSite  0=None, 1=Lax, 2=Strict */
+     *  @param sameSite  0=None, 1=Lax, 2=Strict
+     *  @param secure    Restrict the cookie to HTTPS requests */
     void setCookie(const char* name, const char* value,
                    const char* path, int maxAge,
                    bool httpOnly, int sameSite);
+    void setCookie(const char* name, const char* value,
+                   const char* path, int maxAge,
+                   bool httpOnly, int sameSite, bool secure);
 
     /* -- HTTP version -- */
 

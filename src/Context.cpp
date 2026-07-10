@@ -286,12 +286,19 @@ const std::string& Context::cookie(const char* name) const {
 void Context::setCookie(const char* name, const char* value,
                         const char* path, int maxAge,
                         bool httpOnly, int sameSite) {
+    setCookie(name, value, path, maxAge, httpOnly, sameSite, false);
+}
+
+void Context::setCookie(const char* name, const char* value,
+                        const char* path, int maxAge,
+                        bool httpOnly, int sameSite, bool secure) {
     HttpCookie ck;
     ck.name = name;
     ck.value = value;
     ck.path = path;
     ck.max_age = maxAge;
     ck.httponly = httpOnly;
+    ck.secure = secure;
     switch (sameSite) {
     case 0:
         ck.samesite = HttpCookie::None;
