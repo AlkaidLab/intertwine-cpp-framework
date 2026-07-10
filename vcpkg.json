@@ -3,7 +3,7 @@
   "name": "alkaidlab-framework",
   "version": "1.0.0",
   "description": "alkaidlab_fw dependencies",
-  "builtin-baseline": "05442024c3fda64320bd25d2251cc9807b84fb6f",
+  "builtin-baseline": "97b19caab97ab0c8d36c93230046c8c45fcd41d0",
   "dependencies": [
     "boost-system",
     "boost-thread",
