@@ -1,23 +1,23 @@
 # ============================================================================
-# intertwine_cpp_framework — Windows PowerShell 构建脚本 (等价 build.sh)
+# intertwine_cpp_framework — Windows PowerShell build script (equivalent to build.sh)
 #
-# 用法:
+# Usage:
 #   .\build.ps1
 #   .\build.ps1 -VcpkgRoot D:\vcpkg
 #   .\build.ps1 -InstallDir D:\out\intertwine_cpp_framework_install
 #   .\build.ps1 -Test
 #   .\build.ps1 -Clean
 #
-# 流程:
-#   [1/4] vcpkg 准备 + 安装依赖 (Boost / OpenSSL / spdlog / json)
-#   [2/4] 构建 libhv (依赖 OpenSSL)
-#   [3/4] 构建 fw 库 (依赖 libhv + Boost)
-#   [4/4] 安装到 -InstallDir
+# Stages:
+#   [1/4] Prepare vcpkg and install dependencies (Boost / OpenSSL / spdlog / json)
+#   [2/4] Build libhv (requires OpenSSL)
+#   [3/4] Build the framework (requires libhv and Boost)
+#   [4/4] Install to -InstallDir or run tests
 #
-# 前置:
-#   - cmake, ninja, git 在 PATH
-#   - MinGW 模式: gcc / g++ 在 PATH (推荐 MSYS2 mingw64)
-#   - MSVC 模式: 在 "x64 Native Tools" 环境中启动 pwsh
+# Prerequisites:
+#   - cmake, ninja, and git must be on PATH.
+#   - MinGW: gcc and g++ must be on PATH (MSYS2 mingw64 is recommended).
+#   - MSVC: start pwsh from an "x64 Native Tools" environment.
 # ============================================================================
 [CmdletBinding()]
 param(
@@ -43,21 +43,21 @@ if (-not $InstallDir) {
 }
 
 Write-Host '================================================'
-Write-Host '  intertwine_cpp_framework 构建 (Windows)'
+Write-Host '  Building intertwine_cpp_framework (Windows)'
 Write-Host '================================================'
 
-# ── [1/4] vcpkg 准备 ──
+# ── [1/4] Prepare vcpkg ──
 if ($VcpkgRoot) {
     $VcpkgDir = $VcpkgRoot
     if (-not (Test-Path (Join-Path $VcpkgDir 'scripts\buildsystems\vcpkg.cmake'))) {
-        Write-Error "-VcpkgRoot 路径无效: $VcpkgDir"
+        Write-Error "Invalid -VcpkgRoot path: $VcpkgDir"
         exit 1
     }
-    Write-Host "[1/4] 复用 vcpkg: $VcpkgDir"
+    Write-Host "[1/4] Reusing vcpkg: $VcpkgDir"
 } else {
     $VcpkgDir = Join-Path $FwDir 'vcpkg'
     if (-not (Test-Path (Join-Path $VcpkgDir 'scripts\buildsystems\vcpkg.cmake'))) {
-        Write-Host "[1/4] vcpkg 未找到, clone 到 $VcpkgDir..."
+        Write-Host "[1/4] vcpkg not found; cloning to $VcpkgDir..."
         & git clone https://github.com/microsoft/vcpkg.git $VcpkgDir
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         & (Join-Path $VcpkgDir 'bootstrap-vcpkg.bat') -disableMetrics
@@ -72,7 +72,7 @@ if (-not $VcpkgInstalledDir) {
 }
 $OpensslRoot = Join-Path $VcpkgInstalledDir $Triplet
 
-# 检查 OpenSSL 已安装 (lib 名根据 triplet 不同)
+# Check for OpenSSL; library names vary by triplet.
 $opensslMarker = @(
     (Join-Path $OpensslRoot 'lib\libssl.a'),
     (Join-Path $OpensslRoot 'lib\libssl.lib'),
@@ -80,7 +80,7 @@ $opensslMarker = @(
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if (-not $opensslMarker) {
-    Write-Host '  安装 vcpkg 依赖...'
+    Write-Host '  Installing vcpkg dependencies...'
     & $VcpkgExe install `
         --triplet=$Triplet `
         --x-install-root=$VcpkgInstalledDir `
@@ -94,12 +94,12 @@ $opensslMarker = @(
     (Join-Path $OpensslRoot 'lib\ssl.lib')
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $opensslMarker) {
-    Write-Error 'OpenSSL 安装失败, 检查 vcpkg 日志'
+    Write-Error 'OpenSSL installation failed; check the vcpkg logs.'
     exit 1
 }
-Write-Host '  vcpkg 依赖就绪'
+Write-Host '  vcpkg dependencies are ready'
 
-# ── [2/4] 构建 libhv ──
+# ── [2/4] Build libhv ──
 $libhvLib = @(
     (Join-Path $LibhvInstall 'lib\libhv_static.a'),
     (Join-Path $LibhvInstall 'lib\libhv.a'),
@@ -108,7 +108,7 @@ $libhvLib = @(
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if (-not $libhvLib) {
-    Write-Host '[2/4] 构建 libhv...'
+    Write-Host '[2/4] Building libhv...'
     & (Join-Path $FwDir 'build-libhv.ps1') -OpensslRoot $OpensslRoot -Generator $Generator
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $libhvLib = @(
@@ -118,13 +118,13 @@ if (-not $libhvLib) {
         (Join-Path $LibhvInstall 'lib\hv.lib')
     ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 } else {
-    Write-Host '[2/4] libhv 已有缓存, 跳过'
+    Write-Host '[2/4] Reusing cached libhv'
 }
-if (-not $libhvLib) { Write-Error 'libhv 构建失败'; exit 1 }
-Write-Host "  libhv 就绪: $libhvLib"
+if (-not $libhvLib) { Write-Error 'libhv build failed'; exit 1 }
+Write-Host "  libhv is ready: $libhvLib"
 
-# ── [3/4] 构建 fw ──
-Write-Host '[3/4] 构建 fw 库...'
+# ── [3/4] Build the framework ──
+Write-Host '[3/4] Building the framework...'
 if ($Clean -and (Test-Path $BuildDir)) {
     Remove-Item $BuildDir -Recurse -Force
 }
@@ -147,7 +147,7 @@ if ($Test -and $env:GTEST_PREFIX) {
     $cmakeArgs += "-DCMAKE_PREFIX_PATH=$env:GTEST_PREFIX"
 }
 
-# 增量 configure
+# Skip configuration for an incremental build when the installation prefix matches.
 $needConfigure = $true
 $cacheFile = Join-Path $BuildDir 'CMakeCache.txt'
 if ((Test-Path $cacheFile) -and -not $Clean) {
@@ -164,19 +164,19 @@ if ($needConfigure) {
 & cmake --build $BuildDir --config Release -j ([Environment]::ProcessorCount)
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# ── [4/4] 安装 / 测试 ──
+# ── [4/4] Install or test ──
 if ($Test) {
-    Write-Host '[4/4] 运行测试...'
+    Write-Host '[4/4] Running tests...'
     Push-Location $BuildDir
     try {
         & ctest --output-on-failure
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     } finally { Pop-Location }
 } else {
-    Write-Host "[4/4] 安装到 $InstallDir..."
+    Write-Host "[4/4] Installing to $InstallDir..."
     & cmake --install $BuildDir --config Release
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
 Write-Host ''
-Write-Host "安装完成: $InstallDir"
+Write-Host "Installation complete: $InstallDir"

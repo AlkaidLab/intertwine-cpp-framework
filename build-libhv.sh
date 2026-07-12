@@ -1,10 +1,10 @@
 #!/bin/bash
 # ============================================================================
-# 构建 libhv 静态库
-# 用法: bash build-libhv.sh [--openssl-root <dir>]
+# Build the libhv static library.
+# Usage: bash build-libhv.sh [--openssl-root <dir>]
 #
-# 环境变量:
-#   WITH_IO_URING=1    启用 io_uring 事件循环后端（需 Linux 5.1+ 且安装 liburing-devel）
+# Environment:
+#   WITH_IO_URING=1    Enable the io_uring event-loop backend (Linux 5.1+ and liburing-devel required)
 # ============================================================================
 set -e
 
@@ -15,7 +15,7 @@ INSTALL_DIR="$SCRIPT_DIR/build_cache/libhv_install"
 
 OPENSSL_ROOT=""
 
-# 解析参数
+# Parse arguments.
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --openssl-root) OPENSSL_ROOT="$2"; shift 2 ;;
@@ -29,9 +29,9 @@ if [ ! -f "$LIBHV_DIR/CMakeLists.txt" ]; then
     exit 1
 fi
 
-# 增量：已有产物则跳过
+# Reuse an existing archive for incremental builds.
 if [[ -f "$INSTALL_DIR/lib/libhv_static.a" || -f "$INSTALL_DIR/lib/libhv.a" ]]; then
-    echo "libhv 已有缓存，跳过 ($INSTALL_DIR)"
+    echo "Reusing cached libhv ($INSTALL_DIR)"
     exit 0
 fi
 
@@ -57,7 +57,7 @@ if [ -n "$OPENSSL_ROOT" ]; then
     CMAKE_ARGS+=(-DOPENSSL_ROOT_DIR="$OPENSSL_ROOT")
 fi
 
-# io_uring 事件循环后端（Linux 5.1+, 需要 liburing-devel）
+# io_uring event-loop backend (Linux 5.1+ and liburing-devel required).
 if [ "${WITH_IO_URING:-0}" = "1" ]; then
     if ! find /usr/include /usr/local/include -name "liburing.h" -print -quit 2>/dev/null | grep -q .; then
         echo "Error: liburing-devel not found. Install it first:"

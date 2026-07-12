@@ -1,12 +1,12 @@
 # ============================================================================
-# 构建 libhv 静态库 (Windows PowerShell, 等价 build-libhv.sh)
+# Build the libhv static library (Windows PowerShell, equivalent to build-libhv.sh).
 #
-# 用法:
+# Usage:
 #   .\build-libhv.ps1 [-OpensslRoot <dir>] [-Generator 'Ninja']
 #
-# 前置: cmake + (ninja 或 MinGW Makefiles) + 已安装的 OpenSSL (通常由 vcpkg 提供)
+# Prerequisites: cmake, Ninja or MinGW Makefiles, and an OpenSSL installation (normally provided by vcpkg).
 #
-# 产物: build_cache\libhv_install\lib\libhv_static.a (MinGW) 或 hv_static.lib (MSVC)
+# Output: build_cache\libhv_install\lib\libhv_static.a (MinGW) or hv_static.lib (MSVC).
 # ============================================================================
 [CmdletBinding()]
 param(
@@ -28,7 +28,7 @@ if (-not (Test-Path (Join-Path $LibhvSrc 'CMakeLists.txt'))) {
     exit 1
 }
 
-# 增量: 已有产物则跳过
+# Reuse an existing archive for incremental builds.
 $existing = @(
     (Join-Path $InstallDir 'lib\libhv_static.a'),
     (Join-Path $InstallDir 'lib\libhv.a'),
@@ -37,7 +37,7 @@ $existing = @(
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if ($existing) {
-    Write-Host "libhv 已有缓存, 跳过 ($existing)"
+    Write-Host "Reusing cached libhv ($existing)"
     exit 0
 }
 
