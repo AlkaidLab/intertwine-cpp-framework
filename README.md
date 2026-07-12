@@ -1,4 +1,6 @@
-# Intertwine C++ Framework
+# AlkaidLab intertwine-cpp-framework
+
+瑶光·捕梦网 cpp框架
 
 Intertwine 系列的 C++11 基础框架，提供服务端路由与中间件、HTTP/HTTPS/TCP/WebSocket 传输、异步任务、文件传输及常用基础组件。
 
