@@ -95,7 +95,7 @@ bash third_party/intertwine-cpp-framework/build.sh \
   --install-dir ./out/intertwine-cpp-framework
 ```
 
-消费方按以下包名链接：
+通过 CMake 集成：
 
 ```cmake
 find_package(intertwine_cpp_framework REQUIRED)
