@@ -1,22 +1,26 @@
 # AlkaidLab intertwine-cpp-framework
 
-瑶光·捕梦网 cpp框架
+> 瑶光·捕梦网 C++ 框架
 
-Intertwine 系列的 C++11 基础框架，提供服务端路由与中间件、HTTP/HTTPS/TCP/WebSocket 传输、异步任务、文件传输及常用基础组件。
+[![C++11](https://img.shields.io/badge/C%2B%2B-11-00599C?logo=cplusplus)](https://en.cppreference.com/w/cpp/11)
+[![CMake](https://img.shields.io/badge/CMake-3.14%2B-064F8C?logo=cmake)](https://cmake.org/)
+[![License](https://img.shields.io/badge/License-BSD--3--Clause-0B5FFF)](LICENSE)
 
-公开 CMake 包名与库目标为 `intertwine_cpp_framework`，C++ API 位于 `intertwine::fw`。
+面向服务端程序的 C++11 基础框架。它在 libhv 之上提供路由、中间件、HTTP/HTTPS/TCP/WebSocket 传输、文件发送、异步任务和常用工具组件。
 
-本仓库独立发布和使用；文档不约定任何上层应用的可执行文件名、服务名、部署路径或运行配置。
+公开 API 位于 `intertwine::fw`，CMake 包与链接目标为 `intertwine_cpp_framework`。
 
-## 特性
+[中文文档](#文档) · [English documentation](doc_en/README.md)
 
-- 最低兼容 C++11，面向需要兼容较旧编译器和运行环境的项目。
-- 使用 `Application`、`Router`、`Context` 和 `MiddlewareChain` 组织 HTTP 服务。
-- 提供 HTTP、HTTPS、TCP 和 WebSocket 客户端传输抽象。
-- 提供 legacy、stream 和 accel 三种服务端文件传输策略。
-- 提供受监督线程池、无锁队列、流量控制及原子计数器。
-- 提供配置、日志、密码哈希、JWT、证书、ID、时间和 JSON 等工具。
-- 通过 pimpl 和适配层限制业务代码对 libhv 的直接依赖。
+## 适用场景
+
+| 能力 | 组件 |
+| --- | --- |
+| HTTP 服务 | `Application`、`Router`、`Context`、`MiddlewareChain` |
+| 客户端通信 | `ITransport`、`TransportFactory` |
+| 文件发送 | `IFileTransfer`、`FileTransferFactory` |
+| 并发控制 | `SupervisedThreadPool`、`LockfreeQueue`、`SPSCQueue`、`FlowController` |
+| 基础工具 | 配置、日志、JWT、密码哈希、证书、JSON、ID 和时间处理 |
 
 ## 快速开始
 
@@ -26,7 +30,7 @@ cd intertwine-cpp-framework
 ./build.sh --test
 ```
 
-Windows PowerShell：
+Windows：
 
 ```powershell
 git clone --recursive https://github.com/AlkaidLab/intertwine-cpp-framework.git
@@ -34,24 +38,19 @@ Set-Location intertwine-cpp-framework
 .\build.ps1 -Test
 ```
 
-构建脚本会准备 libhv 和 vcpkg 依赖，并将框架安装到构建缓存目录。可通过参数覆盖默认位置：
+构建脚本会准备 vcpkg 与 libhv 依赖。可按需要指定 vcpkg 或安装目录：
 
 ```bash
 ./build.sh --vcpkg-root ../vcpkg
 ./build.sh --install-dir ./out/install
-./build.sh --clean --test
 ```
 
-## C++11 示例
+## 使用方式
 
 ```cpp
-#include "intertwine/fw/Application.hpp"
-#include "intertwine/fw/Context.hpp"
-#include "intertwine/fw/HttpConstants.hpp"
-#include "intertwine/fw/Middleware.hpp"
-#include "intertwine/fw/Router.hpp"
-
-#include <iostream>
+#include <intertwine/fw/Application.hpp>
+#include <intertwine/fw/Context.hpp>
+#include <intertwine/fw/Router.hpp>
 
 namespace fw = intertwine::fw;
 
@@ -59,47 +58,38 @@ int main() {
     fw::Application app;
     fw::Router router;
 
-    router.use("request-log", [](fw::Context&, fw::Next next) -> int {
-        return next();
-    });
-
     router.get("/hello", [](fw::Context& ctx) {
-        ctx.json(fw::HttpStatus::Ok, "{\"message\":\"hello\"}");
+        ctx.json(200, "{\"message\":\"hello\"}");
     });
 
     app.mount(router);
     app.setPort(8080);
-    app.setWorkerThreads(4);
-
-    if (app.start() != 0) {
-        return 1;
-    }
-
-    std::cout << "Press Enter to stop." << std::endl;
-    std::cin.get();
-    app.stop();
-    return 0;
+    return app.start();
 }
 ```
 
-## 作为子模块集成
+### CMake 集成
+
+安装框架后，在项目中查找并链接 `intertwine_cpp_framework`：
+
+```cmake
+find_package(intertwine_cpp_framework REQUIRED)
+target_link_libraries(your_target PRIVATE intertwine_cpp_framework)
+```
+
+若安装位置不在 CMake 的默认搜索路径中，配置项目时传入该前缀：
+
+```bash
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/framework-install
+```
+
+### 作为子模块
 
 ```bash
 git submodule add \
   https://github.com/AlkaidLab/intertwine-cpp-framework.git \
   third_party/intertwine-cpp-framework
 git submodule update --init --recursive
-
-bash third_party/intertwine-cpp-framework/build.sh \
-  --vcpkg-root ./vcpkg \
-  --install-dir ./out/intertwine-cpp-framework
-```
-
-通过 CMake 集成：
-
-```cmake
-find_package(intertwine_cpp_framework REQUIRED)
-target_link_libraries(your_target PRIVATE intertwine_cpp_framework)
 ```
 
 ## 文档
@@ -116,24 +106,15 @@ English:
 - [Architecture](doc_en/Architecture.md)
 - [Module Guide](doc_en/Modules.md)
 
-## 构建要求
+## 依赖
 
-- C++11 编译器
-- CMake 3.14 或更高版本
-- Git（用于初始化子模块）
+- [libhv](https://github.com/ithewei/libhv)
+- [Boost](https://www.boost.org/)
+- [OpenSSL](https://www.openssl.org/)
+- [spdlog](https://github.com/gabime/spdlog)
+- [nlohmann/json](https://github.com/nlohmann/json)
 
-Boost、OpenSSL、spdlog、fmt、nlohmann/json 和 GTest 等依赖由构建流程通过 vcpkg 解析。
-
-测试入口为 `./build.sh --test`；覆盖范围与约束见 [Architecture.md](doc/Architecture.md)。
-
-## 依赖项目
-
-- [libhv](https://github.com/ithewei/libhv) — HTTP 服务端和网络事件基础设施
-- [Boost](https://www.boost.org/) — 线程、文件系统、UUID、原子操作和无锁容器
-- [OpenSSL](https://www.openssl.org/) — TLS、证书、哈希和密码学能力
-- [spdlog](https://github.com/gabime/spdlog) — 日志实现
-- [nlohmann/json](https://github.com/nlohmann/json) — JSON 支持
-- [fmt](https://github.com/fmtlib/fmt) — 格式化支持
+依赖由 vcpkg 构建流程解析；测试使用 GTest。
 
 ## 许可证
 
