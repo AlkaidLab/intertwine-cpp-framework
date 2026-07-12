@@ -2,6 +2,8 @@
 
 公开 API 位于 `intertwine::fw` 命名空间，CMake 包名与库目标为 `intertwine_cpp_framework`。
 
+本文档只描述框架 API；应用程序入口、部署方式和服务管理由各消费方自行定义。
+
 本文聚焦核心框架和传输接口。并发与工具类的详细说明见 [Modules.md](Modules.md)。
 
 ## Context

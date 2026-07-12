@@ -4,6 +4,8 @@ Intertwine C++ Framework 是面向 Intertwine 系列的 C++11 基础框架。它
 
 代码命名空间、CMake 包名和静态库名分别为 `intertwine::fw`、`intertwine_cpp_framework` 和 `libintertwine_cpp_framework`。
 
+框架只定义可复用的库接口与构建边界，不包含上层应用的部署目录、服务单元或运行配置约定。
+
 ## 分层
 
 ```mermaid

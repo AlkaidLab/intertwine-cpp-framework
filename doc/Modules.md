@@ -2,6 +2,8 @@
 
 核心服务 API 见 [API.md](API.md)，依赖与运行模型见 [Architecture.md](Architecture.md)。所有框架类型位于 `intertwine::fw`。
 
+模块不依赖特定上层应用或部署环境，可由任意 C++ 消费方按自身运行模型集成。
+
 ## 客户端传输
 
 ### TransportTypes
