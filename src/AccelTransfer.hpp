@@ -1,13 +1,13 @@
 // AccelTransfer — X-Accel-Redirect 传输策略
 // 设置 nginx X-Accel-Redirect 头后立即返回，由反代完成文件传输。
 
-#ifndef ALKAIDLAB_FW_ACCEL_TRANSFER_HPP
-#define ALKAIDLAB_FW_ACCEL_TRANSFER_HPP
+#ifndef INTERTWINE_CPP_FRAMEWORK_ACCEL_TRANSFER_HPP
+#define INTERTWINE_CPP_FRAMEWORK_ACCEL_TRANSFER_HPP
 
-#include "fw/IFileTransfer.hpp"
+#include "intertwine/fw/IFileTransfer.hpp"
 #include <string>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 class AccelTransfer : public IFileTransfer {
@@ -21,6 +21,6 @@ private:
 };
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine
 
 #endif

@@ -2,7 +2,7 @@
 
 Intertwine C++ Framework 是面向 Intertwine 系列的 C++11 基础框架。它将服务端路由、客户端传输、文件发送、并发组件和常用工具组织在同一套稳定接口下。
 
-仓库品牌已经迁移到 Intertwine。为保持已有消费方兼容，当前代码命名空间、CMake 包名和静态库名仍分别为 `alkaidlab::fw`、`alkaidlab_fw` 和 `libalkaidlab_fw`。
+代码命名空间、CMake 包名和静态库名分别为 `intertwine::fw`、`intertwine_cpp_framework` 和 `libintertwine_cpp_framework`。
 
 ## 分层
 
@@ -66,7 +66,7 @@ flowchart TD
 
 ```text
 intertwine-cpp-framework/
-├── include/fw/       # 公开头文件
+├── include/intertwine/fw/       # 公开头文件
 ├── src/              # 实现
 ├── test/             # 单元测试
 ├── doc/              # API、架构和模块文档
@@ -90,9 +90,9 @@ intertwine-cpp-framework/
 
 ```text
 <install-dir>/
-├── include/fw/
-├── lib/libalkaidlab_fw.a
-└── lib/cmake/alkaidlab_fw/alkaidlab_fw-config.cmake
+├── include/intertwine/fw/
+├── lib/libintertwine_cpp_framework.a
+└── lib/cmake/intertwine_cpp_framework/intertwine_cpp_framework-config.cmake
 ```
 
 ## libhv 缓存构建
@@ -111,7 +111,7 @@ rm -rf build_cache/libhv_install build_cache/libhv_build build
 ## 兼容性约束
 
 1. 公共代码保持 C++11 兼容，不使用 generic lambda 等 C++14 语法。
-2. 现阶段不重命名 `alkaidlab_fw` CMake 包和库文件，避免破坏消费方。
+2. 公共头文件位于 `include/intertwine/fw/`，CMake 包名为 `intertwine_cpp_framework`。
 3. `Context` 不可复制，可移动；异步代码必须正确管理 writer 所有权。
 4. 中间件内部数据优先使用 Context KV，不借用外部可见响应头。
 5. 子模块提交必须固定，构建不得依赖未记录的工作站状态。

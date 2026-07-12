@@ -1,8 +1,8 @@
-#include "fw/AtomicCounter.hpp"
+#include "intertwine/fw/AtomicCounter.hpp"
 #include <gtest/gtest.h>
 #include <cstdint>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(AtomicCounter, DefaultConstructorZero) {
@@ -101,4 +101,4 @@ TEST(AtomicCounter, LargeValues) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

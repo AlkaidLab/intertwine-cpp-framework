@@ -1,8 +1,8 @@
 #include "AccelTransfer.hpp"
-#include "fw/Context.hpp"
-#include "fw/HttpConstants.hpp"
+#include "intertwine/fw/Context.hpp"
+#include "intertwine/fw/HttpConstants.hpp"
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 static std::string safeFilenameForHeader(const std::string& name) {
@@ -48,4 +48,4 @@ void AccelTransfer::send(Context& c, const TransferParams& params) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

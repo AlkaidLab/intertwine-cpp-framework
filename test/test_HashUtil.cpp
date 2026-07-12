@@ -1,16 +1,16 @@
-#include "fw/HashUtil.hpp"
+#include "intertwine/fw/HashUtil.hpp"
 #include <gtest/gtest.h>
 #include <fstream>
 #include <string>
 #include <cstdio>
 #include <boost/filesystem.hpp>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 static std::string writeTempFile(const std::string& content) {
-    boost::filesystem::create_directories("/tmp/alkaidlab_intertwine_tmp");
-    boost::filesystem::path model("/tmp/alkaidlab_intertwine_tmp/hash_%%%%-%%%%");
+    boost::filesystem::create_directories("/tmp/intertwine_cpp_framework_tmp");
+    boost::filesystem::path model("/tmp/intertwine_cpp_framework_tmp/hash_%%%%-%%%%");
     boost::filesystem::path p = boost::filesystem::unique_path(model);
     std::ofstream ofs(p.string(), std::ios::binary);
     if (!ofs) return "";
@@ -59,4 +59,4 @@ TEST(HashUtil, VerifyWrongMD5) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

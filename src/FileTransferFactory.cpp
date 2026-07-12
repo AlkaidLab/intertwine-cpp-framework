@@ -1,10 +1,10 @@
-#include "fw/IFileTransfer.hpp"
+#include "intertwine/fw/IFileTransfer.hpp"
 #include "LegacyTransfer.hpp"
 #include "AccelTransfer.hpp"
 #include "StreamTransfer.hpp"
 #include <boost/algorithm/string.hpp>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 std::unique_ptr<IFileTransfer> FileTransferFactory::create(
@@ -27,4 +27,4 @@ std::unique_ptr<IFileTransfer> FileTransferFactory::create(
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

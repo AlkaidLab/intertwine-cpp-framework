@@ -1,9 +1,9 @@
-#include "fw/Base64.hpp"
+#include "intertwine/fw/Base64.hpp"
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(Base64, EncodeDecodeString) {
@@ -41,4 +41,4 @@ TEST(Base64, EncodeRawPointer) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

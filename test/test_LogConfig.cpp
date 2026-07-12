@@ -1,7 +1,7 @@
-#include "fw/LogConfig.hpp"
+#include "intertwine/fw/LogConfig.hpp"
 #include <gtest/gtest.h>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(LogConfig, LevelEnumValues) {
@@ -27,4 +27,4 @@ TEST(LogConfig, SetRemainDaysDoesNotCrash) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

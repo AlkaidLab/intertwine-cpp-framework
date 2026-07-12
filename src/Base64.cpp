@@ -1,7 +1,7 @@
-#include "fw/Base64.hpp"
+#include "intertwine/fw/Base64.hpp"
 #include <hv/base64.h>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 std::string Base64::encode(const unsigned char* data, size_t len) {
@@ -30,4 +30,4 @@ std::string Base64::encode(const std::vector<unsigned char>& data) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

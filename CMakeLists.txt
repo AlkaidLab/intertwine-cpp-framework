@@ -1,8 +1,8 @@
-# alkaidlab_fw — Lightweight C++ HTTP framework abstraction layer
+# intertwine_cpp_framework — Lightweight C++ HTTP framework abstraction layer
 # Wraps libhv into Context / Router / Middleware / ServerTransport.
 #
 # 独立构建（预编译安装模式）：
-#   cmake -B build -DLIBHV_INCLUDE_DIR=... -DCMAKE_INSTALL_PREFIX=../alkaidlab_fw_install
+#   cmake -B build -DLIBHV_INCLUDE_DIR=... -DCMAKE_INSTALL_PREFIX=../intertwine_cpp_framework_install
 #   cmake --build build
 #   cmake --install build
 
@@ -13,7 +13,7 @@ if(POLICY CMP0167)
     cmake_policy(SET CMP0167 OLD)
 endif()
 
-project(alkaidlab_fw VERSION 1.0.0 LANGUAGES CXX)
+project(intertwine_cpp_framework VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -49,10 +49,10 @@ set(FW_SOURCES
     src/FileTransferFactory.cpp
 )
 
-add_library(alkaidlab_fw STATIC ${FW_SOURCES})
+add_library(intertwine_cpp_framework STATIC ${FW_SOURCES})
 
-set_target_properties(alkaidlab_fw PROPERTIES
-    OUTPUT_NAME "alkaidlab_fw"
+set_target_properties(intertwine_cpp_framework PROPERTIES
+    OUTPUT_NAME "intertwine_cpp_framework"
     POSITION_INDEPENDENT_CODE ON
 )
 
@@ -62,18 +62,18 @@ set_target_properties(alkaidlab_fw PROPERTIES
 #   NOGDI               — 禁用 wingdi.h 里的 ERROR 等绘图宏
 # (DELETE 来自 winnt.h 不可避免, 需要源码层面用不同名字)
 if(WIN32)
-    target_compile_definitions(alkaidlab_fw PUBLIC
+    target_compile_definitions(intertwine_cpp_framework PUBLIC
         NOMINMAX
         WIN32_LEAN_AND_MEAN
         NOGDI
     )
     # 强制注入 POSIX 兼容垫片（localtime_r / gmtime_r 等）。
-    # PUBLIC 选项会传递给所有链接 alkaidlab_fw 的目标。
-    target_compile_options(alkaidlab_fw PUBLIC -include fw/WinPosixShim.hpp)
+    # PUBLIC 选项会传递给所有链接 intertwine_cpp_framework 的目标。
+    target_compile_options(intertwine_cpp_framework PUBLIC -include intertwine/fw/WinPosixShim.hpp)
 endif()
 
-# 公开头文件目录：使用方 #include "fw/Context.hpp"
-target_include_directories(alkaidlab_fw PUBLIC
+# 公开头文件目录：使用方 #include "intertwine/fw/Context.hpp"
+target_include_directories(intertwine_cpp_framework PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
@@ -92,23 +92,32 @@ if(NOT LIBHV_LIB)
         endif()
     endforeach()
 endif()
+# 调用方可传入相对路径；在生成安装配置前统一解析，避免后续工作目录影响它。
+if(LIBHV_INCLUDE_DIR AND NOT IS_ABSOLUTE "${LIBHV_INCLUDE_DIR}")
+    get_filename_component(LIBHV_INCLUDE_DIR "${LIBHV_INCLUDE_DIR}" ABSOLUTE
+        BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+if(LIBHV_LIB AND NOT TARGET "${LIBHV_LIB}" AND NOT IS_ABSOLUTE "${LIBHV_LIB}")
+    get_filename_component(LIBHV_LIB "${LIBHV_LIB}" ABSOLUTE
+        BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
 if(LIBHV_INCLUDE_DIR)
-    target_include_directories(alkaidlab_fw PRIVATE ${LIBHV_INCLUDE_DIR})
+    target_include_directories(intertwine_cpp_framework PRIVATE ${LIBHV_INCLUDE_DIR})
 endif()
 if(LIBHV_LIB)
-    target_link_libraries(alkaidlab_fw ${LIBHV_LIB})
+    target_link_libraries(intertwine_cpp_framework PRIVATE ${LIBHV_LIB})
 endif()
 
 # pthread（transport 模块使用 boost::mutex / boost::condition_variable）
 find_package(Threads REQUIRED)
-target_link_libraries(alkaidlab_fw Threads::Threads)
+target_link_libraries(intertwine_cpp_framework PRIVATE Threads::Threads)
 
 # Boost（transport / TimeUtil / IdUtil / PathGuard 使用）
 if(NOT Boost_FOUND)
     find_package(Boost REQUIRED COMPONENTS thread chrono system filesystem random)
 endif()
-target_include_directories(alkaidlab_fw PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_libraries(alkaidlab_fw
+target_include_directories(intertwine_cpp_framework PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_libraries(intertwine_cpp_framework PRIVATE
     ${Boost_THREAD_LIBRARY}
     ${Boost_CHRONO_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
@@ -116,15 +125,15 @@ target_link_libraries(alkaidlab_fw
     ${Boost_RANDOM_LIBRARY}
 )
 if(TARGET Boost::uuid)
-    target_link_libraries(alkaidlab_fw Boost::uuid)
+    target_link_libraries(intertwine_cpp_framework PRIVATE Boost::uuid)
 endif()
 
 # OpenSSL（HvTransport HTTPS + HashUtil / CertUtil / JwtUtil / PasswordUtil）
 find_package(OpenSSL QUIET)
 if(OPENSSL_FOUND)
-    target_compile_definitions(alkaidlab_fw PRIVATE HAVE_OPENSSL_CRYPTO)
-    target_include_directories(alkaidlab_fw PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_link_libraries(alkaidlab_fw ${OPENSSL_LIBRARIES})
+    target_compile_definitions(intertwine_cpp_framework PRIVATE HAVE_OPENSSL_CRYPTO)
+    target_include_directories(intertwine_cpp_framework PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(intertwine_cpp_framework PRIVATE ${OPENSSL_LIBRARIES})
 endif()
 
 # spdlog（Logger 使用）
@@ -137,31 +146,36 @@ if(spdlog_FOUND)
             INTERFACE_LINK_LIBRARIES "Threads::Threads;fmt::fmt-header-only"
         )
     endif()
-    target_link_libraries(alkaidlab_fw ${SPDLOG_TARGET})
+    target_link_libraries(intertwine_cpp_framework PUBLIC ${SPDLOG_TARGET})
 endif()
 
 # nlohmann/json（JsonUtil 使用，header-only）
 find_package(nlohmann_json CONFIG QUIET)
 if(nlohmann_json_FOUND)
-    target_link_libraries(alkaidlab_fw nlohmann_json::nlohmann_json)
+    target_link_libraries(intertwine_cpp_framework PUBLIC nlohmann_json::nlohmann_json)
 endif()
 
 if(WIN32)
-    target_link_libraries(alkaidlab_fw iphlpapi ws2_32)
+    target_link_libraries(intertwine_cpp_framework PRIVATE iphlpapi ws2_32)
 endif()
 
 # ---- 安装规则 ----
-install(TARGETS alkaidlab_fw
+install(TARGETS intertwine_cpp_framework
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
 )
-install(DIRECTORY include/fw DESTINATION include)
+install(DIRECTORY include/intertwine DESTINATION include)
+
+# 公共头文件包含 hv 类型，安装包必须同时提供其头文件。
+if(LIBHV_INCLUDE_DIR AND EXISTS "${LIBHV_INCLUDE_DIR}/hv")
+    install(DIRECTORY "${LIBHV_INCLUDE_DIR}/hv" DESTINATION include)
+endif()
 # libhv.a 也安装进 install prefix，确保 cmake config 使用相对路径后仍可找到
 if(LIBHV_LIB AND EXISTS "${LIBHV_LIB}")
     install(FILES "${LIBHV_LIB}" DESTINATION lib RENAME libhv.a)
 endif()
 
-# 生成 cmake config：消费方 find_package(alkaidlab_fw) 即可获得完整依赖
+# 生成 cmake config：消费方 find_package(intertwine_cpp_framework) 即可获得完整依赖
 # 记录构建时的 libhv 路径和依赖信息
 set(_FW_LIBHV_LIB_PATH "")
 if(LIBHV_LIB)
@@ -184,16 +198,16 @@ if(DEFINED _LIBHV_HAS_IO_URING AND _LIBHV_HAS_IO_URING)
 endif()
 
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/alkaidlab_fw-config.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/alkaidlab_fw-config.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/intertwine_cpp_framework-config.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/intertwine_cpp_framework-config.cmake"
     @ONLY
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/alkaidlab_fw-config.cmake"
-    DESTINATION lib/cmake/alkaidlab_fw)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/intertwine_cpp_framework-config.cmake"
+    DESTINATION lib/cmake/intertwine_cpp_framework)
 
 
 # ---- 单元测试（构建时自动运行） ----
-option(FW_BUILD_TESTS "Build and run alkaidlab_fw unit tests" ON)
+option(FW_BUILD_TESTS "Build and run intertwine_cpp_framework unit tests" ON)
 if(FW_BUILD_TESTS)
     find_package(GTest CONFIG QUIET)
     if(GTest_FOUND)
@@ -232,7 +246,7 @@ if(FW_BUILD_TESTS)
             if(NOT "${GTEST_INCLUDE_DIRS}" STREQUAL "")
                 target_include_directories(${TEST_NAME} PRIVATE ${GTEST_INCLUDE_DIRS})
             endif()
-            target_link_libraries(${TEST_NAME} alkaidlab_fw ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
+            target_link_libraries(${TEST_NAME} intertwine_cpp_framework ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
             if(LIBHV_INCLUDE_DIR)
                 target_include_directories(${TEST_NAME} PRIVATE ${LIBHV_INCLUDE_DIR})
             endif()
@@ -244,8 +258,8 @@ if(FW_BUILD_TESTS)
             endif()
             add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
         endforeach()
-        message(STATUS "alkaidlab_fw: unit tests enabled")
+        message(STATUS "intertwine_cpp_framework: unit tests enabled")
     else()
-        message(STATUS "alkaidlab_fw: GTest not found, tests skipped")
+        message(STATUS "intertwine_cpp_framework: GTest not found, tests skipped")
     endif()
 endif()

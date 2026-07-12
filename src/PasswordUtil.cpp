@@ -1,4 +1,4 @@
-#include "fw/PasswordUtil.hpp"
+#include "intertwine/fw/PasswordUtil.hpp"
 
 #ifdef HAVE_OPENSSL_CRYPTO
 #include <openssl/evp.h>
@@ -9,7 +9,7 @@
 #include <sstream>
 #include <vector>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 std::string PasswordUtil::base64Encode(const unsigned char* data, int len) {
@@ -175,4 +175,4 @@ bool PasswordUtil::isHashed(const std::string& s) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

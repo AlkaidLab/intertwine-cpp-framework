@@ -1,8 +1,8 @@
-#include "fw/IniConfig.hpp"
+#include "intertwine/fw/IniConfig.hpp"
 #include <hv/iniparser.h>
 #include <list>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 IniConfig::IniConfig() : m_impl(new IniParser()) {}
@@ -86,4 +86,4 @@ std::vector<std::string> IniConfig::keys(const char* section) const {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

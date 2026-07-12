@@ -1,12 +1,12 @@
-#include "fw/TransportFactory.hpp"
-#include "fw/HttpTransport.hpp"
-#include "fw/HttpsTransport.hpp"
-#include "fw/TcpTransport.hpp"
-#include "fw/WebSocketTransport.hpp"
+#include "intertwine/fw/TransportFactory.hpp"
+#include "intertwine/fw/HttpTransport.hpp"
+#include "intertwine/fw/HttpsTransport.hpp"
+#include "intertwine/fw/TcpTransport.hpp"
+#include "intertwine/fw/WebSocketTransport.hpp"
 
 #include <boost/algorithm/string.hpp>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 std::unique_ptr<ITransport> TransportFactory::create(const std::string& type) {
@@ -49,5 +49,5 @@ std::unique_ptr<ITransport> TransportFactory::createWebSocket(const SslConfig& s
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine
 

@@ -1,8 +1,8 @@
-#include "fw/JwtUtil.hpp"
+#include "intertwine/fw/JwtUtil.hpp"
 #include <gtest/gtest.h>
 #include <boost/chrono.hpp>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 static const std::string kSecret = "test_secret_key_for_jwt_testing_1234567890";
@@ -98,4 +98,4 @@ static ::testing::Environment* const kCleanup =
     ::testing::AddGlobalTestEnvironment(new JwtUtilCleanup);
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

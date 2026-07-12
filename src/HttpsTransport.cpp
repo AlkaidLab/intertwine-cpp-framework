@@ -1,5 +1,5 @@
-#include "fw/HttpsTransport.hpp"
-#include "fw/Log.hpp"
+#include "intertwine/fw/HttpsTransport.hpp"
+#include "intertwine/fw/Log.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/system/error_code.hpp>
 #include <algorithm>
@@ -17,7 +17,7 @@
 #include <openssl/opensslv.h>
 #endif
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 HttpsTransport::HttpsTransport()
@@ -581,4 +581,4 @@ void HttpsTransport::setKeepaliveTimeout(int milliseconds) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

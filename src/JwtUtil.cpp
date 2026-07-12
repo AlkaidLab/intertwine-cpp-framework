@@ -1,4 +1,4 @@
-#include "fw/JwtUtil.hpp"
+#include "intertwine/fw/JwtUtil.hpp"
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
 #include <openssl/crypto.h>
@@ -9,7 +9,7 @@
 #include <vector>
 #include <cstdlib>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 /* 黑名单静态成员 */
@@ -341,4 +341,4 @@ int JwtUtil::getMaxEntries() {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

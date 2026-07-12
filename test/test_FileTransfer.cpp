@@ -1,12 +1,12 @@
-#include "fw/IFileTransfer.hpp"
-#include "fw/Context.hpp"
+#include "intertwine/fw/IFileTransfer.hpp"
+#include "intertwine/fw/Context.hpp"
 #include <gtest/gtest.h>
 #include <hv/HttpMessage.h>
 #include <boost/thread.hpp>
 #include <fstream>
 #include <string>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 /* ── TransferStats ─────────────────────────────────── */
@@ -247,4 +247,4 @@ TEST(LegacyTransfer, SmallFileCallsOnComplete) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

@@ -2,12 +2,12 @@
 // send() 注册 EPOLLOUT 回调后立即返回，IO 线程驱动后续分块发送。
 // 零线程占用，每次 pump() <1ms（256KB 磁盘读取），IO 线程可同时服务千级连接。
 
-#ifndef ALKAIDLAB_FW_STREAM_TRANSFER_HPP
-#define ALKAIDLAB_FW_STREAM_TRANSFER_HPP
+#ifndef INTERTWINE_CPP_FRAMEWORK_STREAM_TRANSFER_HPP
+#define INTERTWINE_CPP_FRAMEWORK_STREAM_TRANSFER_HPP
 
-#include "fw/IFileTransfer.hpp"
+#include "intertwine/fw/IFileTransfer.hpp"
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 class StreamTransfer : public IFileTransfer {
@@ -17,6 +17,6 @@ public:
 };
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine
 
 #endif

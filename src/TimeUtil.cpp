@@ -1,11 +1,11 @@
-#include "fw/TimeUtil.hpp"
+#include "intertwine/fw/TimeUtil.hpp"
 #include <boost/chrono.hpp>
 #include <sstream>
 #include <iomanip>
 #include <ctime>
 #include <cstring>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 std::string TimeUtil::toISO8601(time_t timestamp, int microseconds, const std::string& timezone) {
@@ -135,5 +135,5 @@ std::string TimeUtil::formatTimePart(const boost::chrono::system_clock::time_poi
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine
 

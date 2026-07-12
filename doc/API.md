@@ -1,6 +1,6 @@
 # Intertwine C++ Framework API 参考
 
-公开 API 位于 `alkaidlab::fw` 命名空间。仓库已经使用 Intertwine 品牌，但为保持二进制和构建兼容，当前 CMake 包名与库目标仍为 `alkaidlab_fw`。
+公开 API 位于 `intertwine::fw` 命名空间，CMake 包名与库目标为 `intertwine_cpp_framework`。
 
 本文聚焦核心框架和传输接口。并发与工具类的详细说明见 [Modules.md](Modules.md)。
 

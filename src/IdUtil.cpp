@@ -1,5 +1,5 @@
-#include "fw/IdUtil.hpp"
-#include "fw/Logger.hpp"
+#include "intertwine/fw/IdUtil.hpp"
+#include "intertwine/fw/Logger.hpp"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -24,7 +24,7 @@
   #include <netpacket/packet.h>
 #endif
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 SnowflakeGenerator::SnowflakeGenerator(int64_t datacenterId, int64_t workerId)
@@ -278,4 +278,4 @@ std::string IdUtil::generateSnowflakeIdStr() {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

@@ -1,9 +1,9 @@
-#include "fw/Context.hpp"
+#include "intertwine/fw/Context.hpp"
 #include <gtest/gtest.h>
 #include <hv/HttpMessage.h>
 #include <memory>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 // -- KV Store tests (no real HTTP needed) --
@@ -380,4 +380,4 @@ TEST_F(ContextKV, WriterOwnershipNullForTestBuilder) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

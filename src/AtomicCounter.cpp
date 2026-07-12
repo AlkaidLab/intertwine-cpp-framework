@@ -1,6 +1,6 @@
-#include "fw/AtomicCounter.hpp"
+#include "intertwine/fw/AtomicCounter.hpp"
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 AtomicCounter::AtomicCounter()
@@ -54,4 +54,4 @@ AtomicCounter::operator int64_t() const {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

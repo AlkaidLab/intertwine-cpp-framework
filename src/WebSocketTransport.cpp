@@ -1,10 +1,10 @@
-#include "fw/WebSocketTransport.hpp"
-#include "fw/Log.hpp"
+#include "intertwine/fw/WebSocketTransport.hpp"
+#include "intertwine/fw/Log.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/thread.hpp>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 void WebSocketTransport::setupClientCallbacks() {
@@ -608,4 +608,4 @@ void WebSocketTransport::setSslConfig(const SslConfig& config) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

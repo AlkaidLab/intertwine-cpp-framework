@@ -1,7 +1,7 @@
-#include "fw/JsonUtil.hpp"
+#include "intertwine/fw/JsonUtil.hpp"
 #include <gtest/gtest.h>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 /* ── getString ─────────────────────────────────────── */
@@ -130,4 +130,4 @@ TEST(JsonUtilEscape, EmptyString) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

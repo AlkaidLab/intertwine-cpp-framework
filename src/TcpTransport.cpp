@@ -1,5 +1,5 @@
-#include "fw/TcpTransport.hpp"
-#include "fw/Log.hpp"
+#include "intertwine/fw/TcpTransport.hpp"
+#include "intertwine/fw/Log.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/thread.hpp>
@@ -10,7 +10,7 @@
 #include <arpa/inet.h>
 #endif
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TcpTransport::TcpTransport()
@@ -618,4 +618,4 @@ std::string TcpTransport::getTransportType() const {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

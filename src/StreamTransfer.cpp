@@ -4,14 +4,14 @@
 //   pump() 在 EPOLLOUT 事件中读取磁盘块 → WriteBody → 直到 remaining == 0 → End()
 
 #include "StreamTransfer.hpp"
-#include "fw/Context.hpp"
-#include "fw/HttpConstants.hpp"
+#include "intertwine/fw/Context.hpp"
+#include "intertwine/fw/HttpConstants.hpp"
 #include <boost/function.hpp>
 #include <hv/HttpResponseWriter.h>
 #include <fstream>
 #include <memory>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 namespace {
@@ -277,4 +277,4 @@ void StreamTransfer::send(Context& c, const TransferParams& params) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

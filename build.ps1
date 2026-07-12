@@ -1,10 +1,10 @@
 # ============================================================================
-# alkaidlab_fw — Windows PowerShell 构建脚本 (等价 build.sh)
+# intertwine_cpp_framework — Windows PowerShell 构建脚本 (等价 build.sh)
 #
 # 用法:
 #   .\build.ps1
 #   .\build.ps1 -VcpkgRoot D:\vcpkg
-#   .\build.ps1 -InstallDir D:\out\alkaidlab_fw_install
+#   .\build.ps1 -InstallDir D:\out\intertwine_cpp_framework_install
 #   .\build.ps1 -Test
 #   .\build.ps1 -Clean
 #
@@ -39,11 +39,11 @@ $LibhvInstall  = Join-Path $FwDir 'build_cache\libhv_install'
 
 if (-not $InstallDir) {
     $projectRoot = Resolve-Path (Join-Path $FwDir '..\..')
-    $InstallDir  = Join-Path $projectRoot.Path 'build_cache\alkaidlab_fw_install'
+    $InstallDir  = Join-Path $projectRoot.Path 'build_cache\intertwine_cpp_framework_install'
 }
 
 Write-Host '================================================'
-Write-Host '  alkaidlab_fw 构建 (Windows)'
+Write-Host '  intertwine_cpp_framework 构建 (Windows)'
 Write-Host '================================================'
 
 # ── [1/4] vcpkg 准备 ──

@@ -1,5 +1,5 @@
-#include "fw/CertUtil.hpp"
-#include "fw/Logger.hpp"
+#include "intertwine/fw/CertUtil.hpp"
+#include "intertwine/fw/Logger.hpp"
 
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
@@ -18,7 +18,7 @@
   #include <sys/stat.h>
 #endif
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 bool CertUtil::generateSelfSigned(const std::string& certPath,
@@ -234,4 +234,4 @@ bool CertUtil::readCertInfo(const std::string& certPath, CertInfo& info) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

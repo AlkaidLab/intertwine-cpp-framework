@@ -1,7 +1,7 @@
-#include "fw/SupervisedThreadPool.hpp"
-#include "fw/Logger.hpp"
+#include "intertwine/fw/SupervisedThreadPool.hpp"
+#include "intertwine/fw/Logger.hpp"
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 #define LOG_POOL_INFO(msg)  LOG_INFO("[pool] " msg)
@@ -34,7 +34,7 @@ void SupervisedThreadPool::start(std::size_t numWorkers) {
         m_workers.push_back(boost::thread(&SupervisedThreadPool::workerLoop, this, i));
     }
     m_supervisor = boost::thread(&SupervisedThreadPool::supervisorLoop, this);
-    alkaidlab::Logger::getInstance().info("[pool] started: " + std::to_string(numWorkers) + " workers + 1 supervisor thread");
+    intertwine::Logger::getInstance().info("[pool] started: " + std::to_string(numWorkers) + " workers + 1 supervisor thread");
 }
 
 bool SupervisedThreadPool::submit(Task task) {
@@ -115,9 +115,9 @@ void SupervisedThreadPool::workerLoop(std::size_t workerId) {
             try {
                 task();
             } catch (const std::exception& e) {
-                alkaidlab::Logger::getInstance().error("[pool] worker " + std::to_string(workerId) + " task exception: " + e.what());
+                intertwine::Logger::getInstance().error("[pool] worker " + std::to_string(workerId) + " task exception: " + e.what());
             } catch (...) {
-                alkaidlab::Logger::getInstance().error("[pool] worker " + std::to_string(workerId) + " task unknown exception");
+                intertwine::Logger::getInstance().error("[pool] worker " + std::to_string(workerId) + " task unknown exception");
             }
         }
     }
@@ -154,9 +154,9 @@ void SupervisedThreadPool::supervisorLoop() {
             break;
         }
         m_workers[id] = boost::thread(&SupervisedThreadPool::workerLoop, this, id);
-        alkaidlab::Logger::getInstance().info("[pool] restarted worker " + std::to_string(id));
+        intertwine::Logger::getInstance().info("[pool] restarted worker " + std::to_string(id));
     }
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

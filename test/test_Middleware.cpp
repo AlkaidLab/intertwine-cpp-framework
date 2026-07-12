@@ -1,9 +1,9 @@
-#include "fw/Middleware.hpp"
-#include "fw/Context.hpp"
+#include "intertwine/fw/Middleware.hpp"
+#include "intertwine/fw/Context.hpp"
 #include <gtest/gtest.h>
 #include <string>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 /* 辅助：通过 TestContextBuilder 构造一个最简 Context */
@@ -134,4 +134,4 @@ TEST(MiddlewareTest, AfterLogicRunsOnReturn) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

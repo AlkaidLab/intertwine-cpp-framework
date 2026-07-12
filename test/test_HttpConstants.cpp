@@ -1,7 +1,7 @@
-#include "fw/HttpConstants.hpp"
+#include "intertwine/fw/HttpConstants.hpp"
 #include <gtest/gtest.h>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 // 验证 HttpStatus 值符合 HTTP 标准
@@ -42,4 +42,4 @@ TEST(HttpConstants, NextIsZero) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

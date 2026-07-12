@@ -1,11 +1,11 @@
-#include "fw/Logger.hpp"
+#include "intertwine/fw/Logger.hpp"
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <vector>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 Logger::Logger()
@@ -53,7 +53,7 @@ void Logger::recreateLogger() {
         }
 
         // 创建新 logger
-        auto new_logger = std::make_shared<spdlog::logger>("alkaidlab", sinks.begin(), sinks.end());
+        auto new_logger = std::make_shared<spdlog::logger>("intertwine", sinks.begin(), sinks.end());
         new_logger->set_level(toSpdlogLevel(m_level));
         new_logger->flush_on(spdlog::level::warn);
 
@@ -217,5 +217,4 @@ LogLevel Logger::fromSpdlogLevel(spdlog::level::level_enum level) const {
 }
 
 } // namespace fw
-} // namespace alkaidlab
-
+} // namespace intertwine

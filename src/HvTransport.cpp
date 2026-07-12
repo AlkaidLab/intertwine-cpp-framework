@@ -1,8 +1,8 @@
-#include "fw/HvTransport.hpp"
-#include "fw/Router.hpp"
+#include "intertwine/fw/HvTransport.hpp"
+#include "intertwine/fw/Router.hpp"
 #include <hv/hssl.h>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 HvServerTransport::HvServerTransport()
@@ -82,4 +82,4 @@ std::string HvServerTransport::type() const {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

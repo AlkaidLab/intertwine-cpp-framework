@@ -1,7 +1,7 @@
-#include "fw/PasswordUtil.hpp"
+#include "intertwine/fw/PasswordUtil.hpp"
 #include <gtest/gtest.h>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(PasswordUtil, HashProducesHashedFormat) {
@@ -53,4 +53,4 @@ TEST(PasswordUtil, EmptyPasswordHashable) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

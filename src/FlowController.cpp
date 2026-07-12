@@ -1,6 +1,6 @@
-#include "fw/FlowController.hpp"
+#include "intertwine/fw/FlowController.hpp"
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 FlowController::FlowController(size_t maxQueueSize, bool dropOnFull)
@@ -64,4 +64,4 @@ void FlowController::setDropOnFull(bool dropOnFull) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

@@ -1,10 +1,10 @@
-#include "fw/LogConfig.hpp"
+#include "intertwine/fw/LogConfig.hpp"
 #include <hv/hlog.h>
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
 #include <string>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 static bool s_initialized = false;
@@ -60,4 +60,4 @@ bool LogConfig::initialize(const std::string& logDir,
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

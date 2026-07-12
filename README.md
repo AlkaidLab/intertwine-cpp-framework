@@ -4,7 +4,7 @@
 
 Intertwine 系列的 C++11 基础框架，提供服务端路由与中间件、HTTP/HTTPS/TCP/WebSocket 传输、异步任务、文件传输及常用基础组件。
 
-仓库名称已经迁移为 `intertwine-cpp-framework`。为保持现有使用方兼容，CMake 包名、库名和命名空间暂时继续使用 `alkaidlab_fw`、`libalkaidlab_fw` 和 `alkaidlab::fw`。
+公开 CMake 包名与库目标为 `intertwine_cpp_framework`，C++ API 位于 `intertwine::fw`。
 
 ## 特性
 
@@ -43,15 +43,15 @@ Set-Location intertwine-cpp-framework
 ## C++11 示例
 
 ```cpp
-#include "fw/Application.hpp"
-#include "fw/Context.hpp"
-#include "fw/HttpConstants.hpp"
-#include "fw/Middleware.hpp"
-#include "fw/Router.hpp"
+#include "intertwine/fw/Application.hpp"
+#include "intertwine/fw/Context.hpp"
+#include "intertwine/fw/HttpConstants.hpp"
+#include "intertwine/fw/Middleware.hpp"
+#include "intertwine/fw/Router.hpp"
 
 #include <iostream>
 
-namespace fw = alkaidlab::fw;
+namespace fw = intertwine::fw;
 
 int main() {
     fw::Application app;
@@ -93,11 +93,11 @@ bash third_party/intertwine-cpp-framework/build.sh \
   --install-dir ./out/intertwine-cpp-framework
 ```
 
-消费方继续使用兼容包名：
+消费方按以下包名链接：
 
 ```cmake
-find_package(alkaidlab_fw REQUIRED)
-target_link_libraries(your_target PRIVATE alkaidlab_fw)
+find_package(intertwine_cpp_framework REQUIRED)
+target_link_libraries(your_target PRIVATE intertwine_cpp_framework)
 ```
 
 ## 模块

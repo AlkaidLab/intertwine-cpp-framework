@@ -1,7 +1,7 @@
-#include "fw/LockfreeQueue.hpp"
+#include "intertwine/fw/LockfreeQueue.hpp"
 #include <gtest/gtest.h>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(LockfreeQueue, PushPopBasic) {
@@ -69,4 +69,4 @@ TEST(LockfreeQueue, PushFullReturnsFalse) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

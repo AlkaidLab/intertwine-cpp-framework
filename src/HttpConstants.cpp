@@ -2,13 +2,13 @@
  * HttpConstants.cpp — 编译期校验 fw::HttpStatus / fw::HttpMethod 与 libhv 枚举值一致。
  * 若上游 libhv 修改了枚举值，此处 static_assert 将立即触发编译错误。
  */
-#include "fw/HttpConstants.hpp"
+#include "intertwine/fw/HttpConstants.hpp"
 #include <hv/httpdef.h>
 #include <hv/HttpService.h>  // HTTP_STATUS_CLOSE macro
 
 // ---- HttpStatus 校验 ----
 #define FW_CHECK_STATUS(fw_name, hv_name) \
-    static_assert(::alkaidlab::fw::HttpStatus::fw_name == (hv_name), \
+    static_assert(::intertwine::fw::HttpStatus::fw_name == (hv_name), \
                   "fw::HttpStatus::" #fw_name " mismatches libhv " #hv_name)
 
 FW_CHECK_STATUS(Close,           HTTP_STATUS_CLOSE);
@@ -25,7 +25,7 @@ FW_CHECK_STATUS(InternalError,   HTTP_STATUS_INTERNAL_SERVER_ERROR);
 
 // ---- HttpMethod 校验 ----
 #define FW_CHECK_METHOD(fw_name, hv_name) \
-    static_assert(::alkaidlab::fw::HttpMethod::fw_name == (hv_name), \
+    static_assert(::intertwine::fw::HttpMethod::fw_name == (hv_name), \
                   "fw::HttpMethod::" #fw_name " mismatches libhv " #hv_name)
 
 FW_CHECK_METHOD(DELETE_,  HTTP_DELETE);

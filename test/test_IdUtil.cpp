@@ -1,9 +1,9 @@
-#include "fw/IdUtil.hpp"
+#include "intertwine/fw/IdUtil.hpp"
 #include <gtest/gtest.h>
 #include <string>
 #include <set>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(IdUtil, GenerateV4Format) {
@@ -86,4 +86,4 @@ TEST(IsSafeId, HyphenOnly) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

@@ -2,10 +2,10 @@
  * @file test_PathGuard.cpp
  * @brief fw::PathGuard 单元测试
  */
-#include "fw/PathGuard.hpp"
+#include "intertwine/fw/PathGuard.hpp"
 #include <gtest/gtest.h>
 
-using alkaidlab::fw::PathGuard;
+using intertwine::fw::PathGuard;
 
 // ---- 危险路径 ----
 

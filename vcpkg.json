@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "alkaidlab-framework",
+  "name": "intertwine-cpp-framework",
   "version": "1.0.0",
-  "description": "alkaidlab_fw dependencies",
+  "description": "intertwine_cpp_framework dependencies",
   "builtin-baseline": "97b19caab97ab0c8d36c93230046c8c45fcd41d0",
   "dependencies": [
     "boost-system",

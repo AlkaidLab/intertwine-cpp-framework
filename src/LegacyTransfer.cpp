@@ -1,6 +1,6 @@
 #include "LegacyTransfer.hpp"
-#include "fw/Context.hpp"
-#include "fw/HttpConstants.hpp"
+#include "intertwine/fw/Context.hpp"
+#include "intertwine/fw/HttpConstants.hpp"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <hv/HttpResponseWriter.h>
@@ -9,7 +9,7 @@
 #include <boost/chrono.hpp>
 #include <fstream>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 namespace {
@@ -295,4 +295,4 @@ void LegacyTransfer::send(Context& c, const TransferParams& params) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

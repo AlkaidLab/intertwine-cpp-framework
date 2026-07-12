@@ -1,9 +1,9 @@
-#include "fw/IniConfig.hpp"
+#include "intertwine/fw/IniConfig.hpp"
 #include <gtest/gtest.h>
 #include <cstdio>
 #include <fstream>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 class IniConfigTest : public ::testing::Test {
@@ -99,4 +99,4 @@ TEST_F(IniConfigTest, Unload) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

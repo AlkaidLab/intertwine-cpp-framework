@@ -1,8 +1,8 @@
-#include "fw/SPSCQueue.hpp"
+#include "intertwine/fw/SPSCQueue.hpp"
 #include <gtest/gtest.h>
 #include <string>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(SPSCQueue, PushPopBasic) {
@@ -90,4 +90,4 @@ TEST(SPSCQueue, WrapAround) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

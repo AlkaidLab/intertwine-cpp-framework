@@ -1,8 +1,8 @@
-#include "fw/Middleware.hpp"
-#include "fw/Context.hpp"
+#include "intertwine/fw/Middleware.hpp"
+#include "intertwine/fw/Context.hpp"
 #include <utility>  // std::move
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 void MiddlewareChain::use(MiddlewareFn fn) {
@@ -35,4 +35,4 @@ int MiddlewareChain::run(size_t idx, Context& ctx,
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

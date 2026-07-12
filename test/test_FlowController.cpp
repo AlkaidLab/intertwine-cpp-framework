@@ -1,8 +1,8 @@
-#include "fw/FlowController.hpp"
+#include "intertwine/fw/FlowController.hpp"
 #include <gtest/gtest.h>
 #include <cstdint>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(FlowController, CanPushUnderLimit) {
@@ -80,4 +80,4 @@ TEST(FlowController, MultipleDropsAccumulate) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

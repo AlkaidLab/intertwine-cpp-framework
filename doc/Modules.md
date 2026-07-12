@@ -1,6 +1,6 @@
 # Intertwine C++ Framework 模块参考
 
-核心服务 API 见 [API.md](API.md)，依赖与运行模型见 [Architecture.md](Architecture.md)。所有框架类型位于 `alkaidlab::fw`，少量兼容别名位于 `alkaidlab`。
+核心服务 API 见 [API.md](API.md)，依赖与运行模型见 [Architecture.md](Architecture.md)。所有框架类型位于 `intertwine::fw`。
 
 ## 客户端传输
 

@@ -1,10 +1,10 @@
-#include "fw/TimeUtil.hpp"
+#include "intertwine/fw/TimeUtil.hpp"
 #include <gtest/gtest.h>
 #include <boost/chrono.hpp>
 #include <string>
 #include <ctime>
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 TEST(TimeUtil, NowISO8601NonEmpty) {
@@ -60,4 +60,4 @@ TEST(TimeUtil, NowMsMonotonic) {
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine

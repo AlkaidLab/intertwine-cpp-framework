@@ -1,4 +1,4 @@
-#include "fw/HashUtil.hpp"
+#include "intertwine/fw/HashUtil.hpp"
 #include <fstream>
 #include <vector>
 
@@ -6,7 +6,7 @@
 #include <openssl/evp.h>
 #endif
 
-namespace alkaidlab {
+namespace intertwine {
 namespace fw {
 
 #ifdef HAVE_OPENSSL_CRYPTO
@@ -162,4 +162,4 @@ bool HashUtil::verify(const std::string& filePath,
 }
 
 } // namespace fw
-} // namespace alkaidlab
+} // namespace intertwine
