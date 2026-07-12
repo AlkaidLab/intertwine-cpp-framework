@@ -1,156 +1,145 @@
-# alkaidlab_fw
+# Intertwine C++ Framework
 
-轻量级 C++11 HTTP 服务端框架，基于 libhv 封装。
+Intertwine 系列的 C++11 基础框架，提供服务端路由与中间件、HTTP/HTTPS/TCP/WebSocket 传输、异步任务、文件传输及常用基础组件。
+
+仓库名称已经迁移为 `intertwine-cpp-framework`。为保持现有使用方兼容，CMake 包名、库名和命名空间暂时继续使用 `alkaidlab_fw`、`libalkaidlab_fw` 和 `alkaidlab::fw`。
+
+## 特性
+
+- 最低兼容 C++11，面向需要兼容较旧编译器和运行环境的项目。
+- 使用 `Application`、`Router`、`Context` 和 `MiddlewareChain` 组织 HTTP 服务。
+- 提供 HTTP、HTTPS、TCP 和 WebSocket 客户端传输抽象。
+- 提供 legacy、stream 和 accel 三种服务端文件传输策略。
+- 提供受监督线程池、无锁队列、流量控制及原子计数器。
+- 提供配置、日志、密码哈希、JWT、证书、ID、时间和 JSON 等工具。
+- 通过 pimpl 和适配层限制业务代码对 libhv 的直接依赖。
 
 ## 快速开始
 
 ```bash
-# 克隆仓库
-git clone --recursive git@github.com:Yundi339/alkaidlab_fw.git
-cd alkaidlab_fw
-
-# 拉取子模块
-git submodule update --init --recursive
-
-# 构建
-./build.sh
-```
-
-## 为什么做这个框架
-
-现有 C++ HTTP 框架普遍要求 C++14/17 甚至 C++20，对老旧生产环境（CentOS 7 等）不友好。alkaidlab_fw 的核心设计目标是 **最小兼容 C++11**，在保持现代框架风格（洋葱模型中间件、声明式路由、异步支持）的同时，确保可以在 GCC 4.8.5+ 环境中编译和运行。
-
-## 模块功能
-
-框架分为四大模块：**核心**、**工具**、**并发**、**网络**。
-
-```
-alkaidlab_fw/
-├── 核心模块 ─────── Application / Router / Context / MiddlewareChain / IniConfig
-├── 工具模块 ─────── JWT / Hash / Password / Base64 / PathGuard / Logger / Id / Time / Json / Cert
-├── 并发模块 ─────── LockfreeQueue / SPSCQueue / AtomicCounter / FlowController / ThreadPool
-└── 网络模块 ─────── libhv HTTP/1.1 传输
-```
-
-### 核心模块
-
-| 组件 | 职责 |
-|------|------|
-| `fw::Application` | HTTP 服务器生命周期管理（路由挂载、中间件、SSL、异步） |
-| `fw::Context` | 请求/响应封装 + KV 中间件数据传递 |
-| `fw::Router` | 统一路由注册（GET/POST/PUT/DELETE/PATCH + 异步） |
-| `fw::MiddlewareChain` | 洋葱模型中间件链 |
-| `fw::IniConfig` | INI 配置文件解析 |
-
-### 工具模块
-
-| 模块 | 说明 |
-|------|------|
-| `Base64` | Base64 编解码 |
-| `HashUtil` | SHA-256 等哈希计算 |
-| `JwtUtil` | JWT 令牌生成与验证 |
-| `PasswordUtil` | 密码哈希与校验 |
-| `CertUtil` | SSL 证书工具 |
-| `IdUtil` | UUID / Snowflake ID 生成 |
-| `TimeUtil` | 时间格式化与解析 |
-| `PathGuard` | 路径安全校验（防遍历攻击） |
-| `JsonUtil` | JSON 序列化辅助 |
-| `Logger` / `LogConfig` | 日志文件 / 级别 / 轮转配置 |
-
-### 并发组件
-
-| 模块 | 说明 |
-|------|------|
-| `AtomicCounter` | 无锁原子计数器 |
-| `FlowController` | 流量控制 |
-| `LockfreeQueue` | 多生产者多消费者无锁队列 |
-| `SPSCQueue` | 单生产者单消费者无锁队列 |
-| `SupervisedThreadPool` | 受监督线程池 |
-
-## 用法
-
-### 独立构建
-
-```bash
-# 构建（自动 clone vcpkg 并安装依赖）
-./build.sh
-
-# 复用已有 vcpkg（推荐，避免重复下载）
-./build.sh --vcpkg-root /path/to/vcpkg
-
-# 指定安装目录
-./build.sh --install-dir /path/to/output
-
-# 构建并运行测试
+git clone --recursive https://github.com/AlkaidLab/intertwine-cpp-framework.git
+cd intertwine-cpp-framework
 ./build.sh --test
-
-# 清空后重新构建
-./build.sh --clean
 ```
 
-### 作为子模块集成
+Windows PowerShell：
+
+```powershell
+git clone --recursive https://github.com/AlkaidLab/intertwine-cpp-framework.git
+Set-Location intertwine-cpp-framework
+.\build.ps1 -Test
+```
+
+构建脚本会准备 libhv 和 vcpkg 依赖，并将框架安装到构建缓存目录。可通过参数覆盖默认位置：
 
 ```bash
-# 在你的项目中添加子模块
-git submodule add git@github.com:Yundi339/alkaidlab_fw.git third_party/alkaidlab_fw
-git submodule update --init --recursive
-
-# 构建（复用项目的 vcpkg）
-bash third_party/alkaidlab_fw/build.sh \
-    --vcpkg-root "$PWD/vcpkg" \
-    --install-dir "$PWD/build_cache/alkaidlab_fw_install"
+./build.sh --vcpkg-root ../vcpkg
+./build.sh --install-dir ./out/install
+./build.sh --clean --test
 ```
 
-### 代码示例
+## C++11 示例
 
 ```cpp
 #include "fw/Application.hpp"
-#include "fw/Router.hpp"
+#include "fw/Context.hpp"
 #include "fw/HttpConstants.hpp"
+#include "fw/Middleware.hpp"
+#include "fw/Router.hpp"
+
+#include <iostream>
+
+namespace fw = alkaidlab::fw;
 
 int main() {
     fw::Application app;
     fw::Router router;
 
-    router.use("logger", [](auto& ctx, auto next) {
+    router.use("request-log", [](fw::Context&, fw::Next next) -> int {
         return next();
     });
 
-    router.get("/hello", [](fw::Context& c) {
-        c.json(200, R"({"msg":"hello"})");
+    router.get("/hello", [](fw::Context& ctx) {
+        ctx.json(fw::HttpStatus::Ok, "{\"message\":\"hello\"}");
     });
 
     app.mount(router);
-    app.setHost("0.0.0.0");
     app.setPort(8080);
     app.setWorkerThreads(4);
-    app.start();
-    // ... wait for shutdown ...
+
+    if (app.start() != 0) {
+        return 1;
+    }
+
+    std::cout << "Press Enter to stop." << std::endl;
+    std::cin.get();
     app.stop();
+    return 0;
 }
 ```
 
-## 构建依赖
+## 作为子模块集成
 
-- **C++11**（GCC 4.8.5+ / Clang 3.4+）
-- CMake 3.14+
+```bash
+git submodule add \
+  https://github.com/AlkaidLab/intertwine-cpp-framework.git \
+  third_party/intertwine-cpp-framework
+git submodule update --init --recursive
 
-运行时依赖通过 vcpkg 自动管理（`build.sh` 自动处理），无需手动安装。
+bash third_party/intertwine-cpp-framework/build.sh \
+  --vcpkg-root ./vcpkg \
+  --install-dir ./out/intertwine-cpp-framework
+```
+
+消费方继续使用兼容包名：
+
+```cmake
+find_package(alkaidlab_fw REQUIRED)
+target_link_libraries(your_target PRIVATE alkaidlab_fw)
+```
+
+## 模块
+
+| 分类 | 主要组件 | 用途 |
+|------|----------|------|
+| 核心框架 | `Application`、`Router`、`Context`、`MiddlewareChain` | 服务生命周期、路由、中间件和请求响应封装 |
+| 服务端传输 | `ServerTransport`、`HvServerTransport` | 基于 libhv 的 HTTP/HTTPS 服务端适配 |
+| 客户端传输 | `ITransport`、`TransportFactory` | HTTP、HTTPS、TCP 和 WebSocket 请求传输 |
+| 文件传输 | `IFileTransfer`、`FileTransferFactory` | 内存响应、事件驱动流式发送和代理加速 |
+| 并发 | `SupervisedThreadPool`、`LockfreeQueue`、`SPSCQueue` | 异步任务、无锁队列和流量控制 |
+| 工具 | `IniConfig`、`Logger`、`JwtUtil`、`PasswordUtil` 等 | 配置、安全、日志、序列化和通用能力 |
+
+完整说明：
+
+- [API 参考](doc/API.md)
+- [架构说明](doc/Architecture.md)
+- [模块参考](doc/Modules.md)
+
+## 构建要求
+
+- C++11 编译器
+- CMake 3.14 或更高版本
+- Git（用于初始化子模块）
+
+Boost、OpenSSL、spdlog、fmt、nlohmann/json 和 GTest 等依赖由构建流程通过 vcpkg 解析。
 
 ## 测试
 
-8 个测试套件，覆盖 Context（40 case）/ Middleware / Router / Base64 / LogConfig / IniConfig / HttpConstants / Application。
+CMake 当前注册 20 个测试可执行程序，覆盖核心框架、配置与安全工具、日志和并发容器。
 
-## 鸣谢
+```bash
+./build.sh --test
+```
 
-依赖开源项目：
+## 依赖项目
 
-- **[libhv](https://github.com/ithewei/libhv)** — 高性能跨平台网络库，提供 HTTP 服务器核心传输能力
-- **[Boost](https://www.boost.org/)** — 线程、文件系统、UUID 等基础设施
-- **[OpenSSL](https://www.openssl.org/)** — TLS/SSL 加密与证书处理
-- **[spdlog](https://github.com/gabime/spdlog)** — 高性能日志库
-- **[nlohmann/json](https://github.com/nlohmann/json)** — 现代 C++ JSON 库
-- **[fmt](https://github.com/fmtlib/fmt)** — 格式化库
-## 许可
+- [libhv](https://github.com/ithewei/libhv) — HTTP 服务端和网络事件基础设施
+- [Boost](https://www.boost.org/) — 线程、文件系统、UUID、原子操作和无锁容器
+- [OpenSSL](https://www.openssl.org/) — TLS、证书、哈希和密码学能力
+- [spdlog](https://github.com/gabime/spdlog) — 日志实现
+- [nlohmann/json](https://github.com/nlohmann/json) — JSON 支持
+- [fmt](https://github.com/fmtlib/fmt) — 格式化支持
+
+## 许可证
 
 [BSD 3-Clause License](LICENSE)

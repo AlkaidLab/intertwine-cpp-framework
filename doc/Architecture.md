@@ -1,88 +1,127 @@
-# alkaidlab_fw 架构说明
+# Intertwine C++ Framework 架构
 
-C++11 HTTP 服务端框架抽象层，解耦业务逻辑与 libhv。
+Intertwine C++ Framework 是面向 Intertwine 系列的 C++11 基础框架。它将服务端路由、客户端传输、文件发送、并发组件和常用工具组织在同一套稳定接口下。
 
-## 模块分类
+仓库品牌已经迁移到 Intertwine。为保持已有消费方兼容，当前代码命名空间、CMake 包名和静态库名仍分别为 `alkaidlab::fw`、`alkaidlab_fw` 和 `libalkaidlab_fw`。
 
-| 分类 | 组件 | 头文件 |
-|------|------|--------|
-| **核心框架** | Application | fw/Application.hpp — 服务器生命周期（路由+中间件+SSL+异步） |
-| | Context | fw/Context.hpp — 请求/响应封装 + KV 数据传递（pimpl 隔离 libhv） |
-| | MiddlewareChain | fw/Middleware.hpp — 洋葱模型中间件链 |
-| | Router | fw/Router.hpp — 统一路由注册 + libhv 桥接 |
-| | HttpConstants | fw/HttpConstants.hpp — HTTP 状态码/方法枚举 |
-| **传输层** | ServerTransport | fw/ServerTransport.hpp — 传输抽象接口 |
-| | HvTransport | fw/HvTransport.hpp — libhv HTTP/1.1 传输实现 |
-| | HttpTransport | fw/HttpTransport.hpp — HTTP 客户端传输 |
-| | HttpsTransport | fw/HttpsTransport.hpp — HTTPS 客户端传输 |
-| | TcpTransport | fw/TcpTransport.hpp — TCP 传输 |
-| | WebSocketTransport | fw/WebSocketTransport.hpp — WebSocket 传输 |
-| | TransportFactory | fw/TransportFactory.hpp — 传输工厂 |
-| **无锁并发** | LockfreeQueue | fw/LockfreeQueue.hpp — MPMC 无锁队列（boost::lockfree） |
-| | SPSCQueue | fw/SPSCQueue.hpp — SPSC 单产单消队列 |
-| | AtomicCounter | fw/AtomicCounter.hpp — 原子计数器 |
-| | FlowController | fw/FlowController.hpp — 队列流控（防溢出+丢包统计） |
-| **线程池** | SupervisedThreadPool | fw/SupervisedThreadPool.hpp — 受监督线程池（worker 异常自动恢复） |
-| **工具** | Logger | fw/Logger.hpp — spdlog 封装（控制台+文件） |
-| | PathGuard | fw/PathGuard.hpp — 路径安全校验（系统目录黑名单） |
-| | JwtUtil | fw/JwtUtil.hpp — JWT HMAC-SHA256 |
-| | HashUtil | fw/HashUtil.hpp — SHA256/MD5 哈希 |
-| | PasswordUtil | fw/PasswordUtil.hpp — bcrypt 密码哈希 |
-| | IdUtil | fw/IdUtil.hpp — 雪花算法 ID |
-| | Base64 | fw/Base64.hpp — Base64 编解码 |
-| | JsonUtil | fw/JsonUtil.hpp — nlohmann::json 封装 |
-| | TimeUtil | fw/TimeUtil.hpp — 时间格式化/解析 |
-| | CertUtil | fw/CertUtil.hpp — SSL/TLS 证书工具 |
-| | IniConfig | fw/IniConfig.hpp — INI 配置解析（opaque pointer） |
-| | LogConfig | fw/LogConfig.hpp — 日志配置（文件/级别/轮转） |
+## 分层
 
-## 依赖
-
-| 依赖 | 用途 |
-|------|------|
-| libhv | HTTP 服务器核心（git 子模块，build_cache/libhv_install/） |
-| Boost | thread/chrono/system/filesystem/random/uuid/lockfree |
-| OpenSSL | HTTPS + HMAC-SHA256 |
-| spdlog | 日志 |
-| nlohmann-json | JSON |
-| GTest | 测试（可选） |
-
-## 构建
-
-```bash
-bash build.sh                           # 构建+安装到上级 build_cache/alkaidlab_fw_install/
-bash build.sh --test                    # 构建+测试
-bash build.sh --clean                   # 清空重建
-bash build.sh --vcpkg-root /path/vcpkg  # 指定 vcpkg 根目录
-bash build.sh --install-dir /path       # 指定安装路径
+```mermaid
+flowchart TD
+    APP["Application / Router"] --> CORE["Context / MiddlewareChain"]
+    CORE --> SERVER["HvServerTransport"]
+    SERVER --> LIBHV["libhv"]
+    APP --> FILE["IFileTransfer strategies"]
+    CLIENT["ITransport / TransportFactory"] --> LIBHV
+    APP --> ASYNC["Thread pool / lock-free queues"]
+    APP --> UTIL["Configuration / security / logging utilities"]
 ```
 
-产物：`<install-dir>/lib/libalkaidlab_fw.a` + `<install-dir>/include/fw/` + `<install-dir>/lib/cmake/alkaidlab_fw/alkaidlab_fw-config.cmake`
+| 层级 | 组件 | 职责 |
+|------|------|------|
+| 核心服务 | `Application`、`Router`、`Context`、`MiddlewareChain` | 服务生命周期、路由、洋葱中间件和请求响应抽象 |
+| 服务端传输 | `ServerTransport`、`HvServerTransport` | 将 Router 绑定到 libhv HTTP/HTTPS 服务端 |
+| 客户端传输 | `ITransport`、`TransportFactory` | 统一 HTTP、HTTPS、TCP 和 WebSocket 客户端接口 |
+| 文件传输 | `IFileTransfer`、`FileTransferFactory` | 兼容、事件驱动和前置代理三类文件发送策略 |
+| 并发 | `SupervisedThreadPool`、无锁队列、`FlowController` | 异步任务、队列和背压控制 |
+| 工具 | 配置、日志、安全、证书、ID、时间和 JSON 组件 | 提供与业务无关的基础能力 |
 
-### 修改 libhv 源码后强制重建
+## 核心请求流程
 
-libhv 走**缓存式构建**：build.sh 检测到 `build_cache/libhv_install/lib/libhv_static.a` 存在就跳过编译。`--clean` 仅清 fw 自身的 build 目录，**不清 libhv 缓存**。
+1. `Application` 配置服务并挂载 `Router`。
+2. `Router` 将路由和共享的 `MiddlewareChain` 绑定到 libhv。
+3. libhv 请求对象在适配层中包装为 `Context`。
+4. 中间件按洋葱顺序执行，最内层调用业务 handler。
+5. 同步 handler 直接完成响应；异步 handler 由 dispatcher 执行。
+6. 流式文件传输可通过 `markStreamingHandoff()` 接管 writer 生命周期。
 
-修改 libhv 源码（cherry-pick、子模块更新等）后必须手动清理：
+## 依赖边界
 
-```bash
-# 在项目根执行
-rm -rf third_party/alkaidlab_fw/build_cache/libhv_install/   # libhv 安装产物（关键）
-rm -rf third_party/alkaidlab_fw/third_party/libhv/build/     # libhv 编译中间产物
-rm -rf third_party/alkaidlab_fw/build/                       # fw 编译目录（需重链）
-rm -rf build_cache/alkaidlab_fw_install/                     # fw 已安装产物
-find build/ -mindepth 1 -maxdepth 1 ! -name 'vcpkg_installed' -exec rm -rf {} +  # 主工程
-bash deploy/dev_install.sh --backend-only
+- 常规业务 handler 只依赖 `Context`、`Router` 和框架常量。
+- libhv 类型集中在桥接、传输和实现文件中。
+- `ITransport` 与 `IFileTransfer` 分别抽象客户端网络调用和服务端文件发送。
+- 配置、日志和安全工具不依赖业务模型。
+- CMake 安装目标导出框架自身及其必要的传递链接依赖。
+
+## 文件传输架构
+
+| 策略 | 适用场景 | 生命周期 |
+|------|----------|----------|
+| `legacy` | 兼容现有同步 handler；按大小选择响应体或流式发送 | 小文件同步，大文件可能使用 writer |
+| `stream` | 大文件或需要稳定内存占用的下载 | IO loop 驱动，策略负责结束响应 |
+| `accel` | 由支持内部重定向的前置代理发送文件 | 框架只设置响应头，不读取文件内容 |
+
+`TransferStats` 使用原子计数维护累计次数、字节数、活跃数、错误数和耗时。
+
+## 并发模型
+
+- libhv event loop 负责网络事件。
+- `Application::makeAsyncDispatcher()` 将异步路由任务交给 libhv async 执行器。
+- `SupervisedThreadPool` 提供独立的受监督任务执行能力。
+- `LockfreeQueue` 面向 MPMC，`SPSCQueue` 面向单生产者单消费者。
+- `FlowController` 提供队列容量判断和丢弃统计。
+- 流式传输将 writer 操作投递到 writer 所属 IO loop，避免跨线程直接操作连接。
+
+## 目录结构
+
+```text
+intertwine-cpp-framework/
+├── include/fw/       # 公开头文件
+├── src/              # 实现
+├── test/             # 单元测试
+├── doc/              # API、架构和模块文档
+├── cmake/            # CMake 包配置模板
+├── third_party/      # Git 子模块
+├── build.sh          # Unix 构建入口
+└── build.ps1         # Windows 构建入口
 ```
 
-## 设计决策
+## 构建与安装
 
-1. **pimpl 隔离**：Context.hpp 零 libhv `#include`，业务层无需接触 libhv 类型
-2. **KV 替代 X-Internal-\* Header**：中间件数据传递用 `set()`/`get()`，不污染 HTTP header
-3. **洋葱模型**：`int(Context&, Next)` 签名，`next()` 进入下层，不调用则中断
-4. **shared_ptr 共享中间件链**：Router::bind() 创建一份 chain 所有路由共享
-5. **C++11 兼容**：不使用 C++14/17 特性
+```bash
+./build.sh
+./build.sh --test
+./build.sh --clean --test
+./build.sh --vcpkg-root ../vcpkg
+./build.sh --install-dir ./out/install
+```
 
-## 单元测试
+安装目录包含：
 
-20 个测试文件，覆盖核心框架（Context/Middleware/Router/Application） + 工具 + 无锁并发。
+```text
+<install-dir>/
+├── include/fw/
+├── lib/libalkaidlab_fw.a
+└── lib/cmake/alkaidlab_fw/alkaidlab_fw-config.cmake
+```
+
+## libhv 缓存构建
+
+libhv 安装产物缓存在仓库的 `build_cache/libhv_install/`，中间构建目录为 `build_cache/libhv_build/`。仅执行框架的 `--clean` 不保证重建 libhv。
+
+修改 libhv 子模块后，可在仓库根目录清理对应缓存并重新构建：
+
+```bash
+rm -rf build_cache/libhv_install build_cache/libhv_build build
+./build.sh --test
+```
+
+以上命令全部使用仓库相对路径，不依赖特定工作站目录。
+
+## 兼容性约束
+
+1. 公共代码保持 C++11 兼容，不使用 generic lambda 等 C++14 语法。
+2. 现阶段不重命名 `alkaidlab_fw` CMake 包和库文件，避免破坏消费方。
+3. `Context` 不可复制，可移动；异步代码必须正确管理 writer 所有权。
+4. 中间件内部数据优先使用 Context KV，不借用外部可见响应头。
+5. 子模块提交必须固定，构建不得依赖未记录的工作站状态。
+
+## 测试
+
+CMake 当前注册 20 个测试可执行程序，覆盖核心框架、并发组件、配置与安全工具及日志能力。
+
+统一入口：
+
+```bash
+./build.sh --test
+```

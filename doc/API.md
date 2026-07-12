@@ -1,297 +1,214 @@
-# alkaidlab_fw API 参考
+# Intertwine C++ Framework API 参考
+
+公开 API 位于 `alkaidlab::fw` 命名空间。仓库已经使用 Intertwine 品牌，但为保持二进制和构建兼容，当前 CMake 包名与库目标仍为 `alkaidlab_fw`。
+
+本文聚焦核心框架和传输接口。并发与工具类的详细说明见 [Modules.md](Modules.md)。
 
 ## Context
 
-请求/响应封装 + KV 中间件数据传递。
-
-### 构造
-
-| 签名 | 场景 |
-|------|------|
-| `Context(HttpRequest*, HttpResponse*)` | 同步 handler |
-| `Context(const HttpContextPtr&)` | 异步 / 流式 handler |
+`Context` 封装服务端请求、响应和异步 writer。常规 handler 通过 `Context&` 访问数据，无需直接操作 libhv 请求对象。
 
 ### 请求读取
 
 | 方法 | 返回 | 说明 |
 |------|------|------|
-| `method()` | `const char*` | HTTP 方法 ("GET", "POST", …) |
-| `path()` | `const string&` | 请求路径 (e.g. "/api/fs/list") |
-| `param(key)` | `string` | URL path/query 参数 |
-| `header(key)` | `string` | 请求头 |
-| `body()` | `const string&` | 请求体 |
-| `clientIp()` | `string` | Socket 对端 IP |
+| `method()` | `const char*` | HTTP 方法名称 |
+| `methodEnum()` | `int` | 与 libhv 对齐的方法枚举值 |
+| `path()` | `const std::string&` | 请求路径 |
+| `fullPath()` | `std::string` | 包含查询参数的完整路径 |
+| `param(key)` | `std::string` | 路径或查询参数 |
+| `header(key)` | `std::string` | 请求头 |
+| `eraseRequestHeader(key)` | `void` | 删除请求头 |
+| `body()` | `const std::string&` | 请求体 |
+| `contentLength()` | `int64_t` | 请求声明的内容长度 |
+| `formData(key)` | `std::string` | Multipart 表单字段 |
+| `cookie(name)` | `const std::string&` | 请求 Cookie 值 |
+| `clientIp()` | `std::string` | Socket 对端地址文本 |
 | `clientPort()` | `int` | Socket 对端端口 |
-| `formData(key)` | `string` | Multipart 表单字段值 |
-| `contentLength()` | `int64_t` | 请求 Content-Length |
-| `fullPath()` | `string` | 完整路径含 query string |
+| `httpVersion()` | `int` | `major * 10 + minor` 形式的 HTTP 版本 |
 
 ### 响应设置
 
 | 方法 | 说明 |
 |------|------|
-| `setStatus(code)` | 设置 HTTP 状态码 |
-| `status()` | 获取当前状态码 |
-| `setHeader(key, val)` | 设置响应头 |
+| `setStatus(code)` / `status()` | 设置或读取状态码 |
+| `setHeader(key, value)` | 设置响应头；值中的 CR/LF 会被移除 |
 | `responseHeader(key)` | 读取响应头 |
+| `removeHeader(key)` | 删除响应头 |
 | `setBody(body)` | 设置响应体 |
-| `setContentType(ct)` | 设置 Content-Type |
-| `serveFile(path)` | 读取文件内容到响应体 |
-| `json(code, body)` | JSON 响应 (Content-Type + status + body) |
-| `error(code, errCode, msg)` | JSON 错误响应 |
-| `responseBodySize()` | 响应体大小 (bytes) |
-| `removeHeader(key)` | 移除响应头 |
+| `responseBodySize()` | 获取当前响应体字节数 |
+| `setContentType(type)` | 设置 Content-Type |
+| `setContentTypeByFilename(name)` | 根据文件名推导 Content-Type |
+| `serveFile(path)` | 将文件交给同步响应路径处理 |
+| `json(status, body)` | 设置 JSON 状态、类型和响应体 |
+| `error(status, code, message)` | 生成统一 JSON 错误响应 |
+| `setCookie(...)` | 设置响应 Cookie，支持 HttpOnly、SameSite 和 Secure |
 
-### 流式写入 (ctx_handler 场景)
+### 流式响应
+
+这些方法仅在异步 `ctx_handler` 场景存在 writer 时有效：
 
 | 方法 | 说明 |
 |------|------|
-| `hasWriter()` | 是否有 writer |
-| `writeStatus(code)` | 写状态行 |
-| `writeHeader(key, val)` | 写响应头 |
-| `endHeaders(key, len)` | 结束头部 |
-| `writeBody(data, len)` | 写响应体片段 |
-| `writerConnected()` | 连接是否仍然活跃 |
+| `hasWriter()` | 判断 writer 是否可用 |
+| `writeStatus(code)` | 写入状态行 |
+| `writeHeader(key, value)` | 写入响应头 |
+| `endHeaders(key, length)` | 结束响应头并声明内容长度 |
+| `writeBody(data, length)` | 写入一个响应体分片 |
+| `writerConnected()` | 判断连接是否仍可写 |
+| `writeBufsize()` | 获取待发送缓冲区大小 |
 | `end()` | 结束响应 |
+| `writerOwnership()` | 获取保持 writer 存活的共享所有权句柄 |
+| `markStreamingHandoff()` | 将响应生命周期交给流式策略 |
+| `isStreamingHandoff()` | 判断是否已完成流式接管 |
 
-### KV 存储 (中间件 → handler 数据传递)
+### 上下文 KV
 
 | 方法 | 说明 |
 |------|------|
-| `set(key, val)` | 存储键值对 |
-| `get(key, def)` | 读取值，不存在返回 def |
-| `has(key)` | 键是否存在 |
+| `set(key, value)` | 写入中间件上下文值 |
+| `get(key, defaultValue)` | 读取上下文值 |
+| `has(key)` | 判断键是否存在 |
 
----
+### 测试构造器
+
+`TestContextBuilder` 用于在测试中构造 `Context`，支持设置 method、path、header、client address 文本和 body。底层 libhv 对象由构造器内部管理。
 
 ## MiddlewareChain
 
-洋葱模型中间件链。
+中间件签名为：
+
+```cpp
+using Next = std::function<int()>;
+using MiddlewareFn = std::function<int(Context&, Next)>;
+```
+
+调用 `next()` 进入下一层；不调用则终止当前链。`next()` 返回内层 handler 或中间件的状态码。
 
 | 方法 | 说明 |
 |------|------|
 | `use(fn)` | 添加匿名中间件 |
 | `use(name, fn)` | 添加命名中间件 |
-| `execute(ctx, finalHandler)` | 执行完整链 |
-
-中间件签名：`int(Context&, Next)` — 调用 `next()` 进入下一层，不调用则中断链。
-
----
+| `execute(ctx, finalHandler)` | 执行完整洋葱链 |
+| `size()` | 返回中间件数量 |
+| `clear()` | 清空中间件 |
 
 ## Router
 
-统一路由注册 + libhv 桥接。
-
-### 路由注册
+Handler 签名为 `std::function<void(Context&)>`。
 
 | 方法 | 说明 |
 |------|------|
-| `get(path, handler)` | 注册 GET 路由 |
-| `post(path, handler)` | 注册 POST 路由 |
-| `put(path, handler)` | 注册 PUT 路由 |
-| `del(path, handler)` | 注册 DELETE 路由 |
-| `patch(path, handler)` | 注册 PATCH 路由 |
-| `getAsync(path, handler)` | 注册异步 GET (ctx_handler) |
-
-Handler 签名：`void(Context&)`
-
-### 中间件
-
-| 方法 | 说明 |
-|------|------|
-| `use(name, fn)` | 全局中间件 |
-
-### libhv 桥接
-
-| 方法 | 说明 |
-|------|------|
-| `bind(hv::HttpService&)` | 绑定到 libhv 路由系统 |
-| `setAsyncDispatcher(fn)` | 设置异步任务派发器 |
-
----
-
-## ServerTransport / HvServerTransport
-
-传输层抽象。`HvServerTransport` 封装 libhv 的 `hv::HttpServer`。
-
-| 方法 | 说明 |
-|------|------|
-| `start(config)` | 启动 HTTP 服务 |
-| `stop()` | 停止服务 |
-| `isRunning()` | 是否运行中 |
-
----
-
-## 设计原则
-
-1. **C++11 兼容** — 不使用 C++14/17 特性
-2. **零业务耦合** — 仅封装 HTTP 协议抽象，不包含业务逻辑
-3. **Handler 层零 raw 指针** — 通过 Context 方法访问所有请求/响应数据
-4. **KV 替代 X-Internal-*** — 中间件间数据传递使用 `set()`/`get()`，不污染 HTTP header
-5. **libhv 隔离** — 公开头文件零 libhv 类型，上游可替换
-
----
+| `get/post/put/del/patch(path, handler)` | 注册同步路由 |
+| `getAsync(path, handler)` | 注册异步 GET 路由 |
+| `use(fn)` / `use(name, fn)` | 添加路由级中间件 |
+| `setAsyncDispatcher(fn)` | 设置异步任务派发器；未设置时同步执行 |
+| `setAsyncTaskTracker(fn)` | 跟踪在途异步任务数量 |
+| `setPostprocessor(fn)` | 设置请求后处理器 |
+| `setErrorHandler(fn)` | 设置未匹配路由处理器 |
+| `bind(service)` | 将路由绑定到 libhv `HttpService` |
+| `routeCount()` | 返回已注册路由数量 |
 
 ## Application
 
-HTTP 服务器生命周期管理。封装 libhv 的 HttpService + HttpServer，提供纯 Context 回调。
+`Application` 管理 HTTP 服务生命周期并封装常用 libhv 服务配置。
 
-### 回调注册
+### 回调与路由
 
 | 方法 | 说明 |
 |------|------|
-| `setHeaderHandler(fn)` | 设置 header 预处理回调；返回 0 放行，负数关闭连接 |
-| `use(fn)` | 添加全局中间件（在路由匹配前执行）；返回 0 放行 |
-| `setErrorHandler(fn)` | 设置 404 / 未匹配路由处理 |
-| `setPostprocessor(fn)` | 设置请求后处理回调 |
+| `setHeaderHandler(fn)` | 请求头解析后的预处理回调 |
+| `use(fn)` | 添加服务级中间件 |
+| `setErrorHandler(fn)` | 设置未匹配路由处理 |
+| `setPostprocessor(fn)` | 设置请求完成后的处理器 |
+| `mount(router)` | 挂载 Router |
 
-所有回调签名：`std::function<int(Context&)>`
+服务级回调签名为 `std::function<int(Context&)>`。
 
-### 路由 & 静态文件
+### 静态内容与代理
 
 | 方法 | 说明 |
 |------|------|
 | `setDocumentRoot(path)` | 设置静态文件根目录 |
-| `mount(Router&)` | 挂载路由到当前应用 |
+| `mountStatic(prefix, directory)` | 将 URL 前缀映射到静态目录 |
+| `proxy(prefix, target)` | 配置反向代理映射 |
+| `setProxyTimeout(connect, read, write)` | 设置代理超时，单位毫秒 |
 
-### 服务器配置
-
-| 方法 | 说明 |
-|------|------|
-| `setHost(host)` | 监听地址 |
-| `setPort(port)` | HTTP 端口 |
-| `setHttpsPort(port)` | HTTPS 端口 |
-| `setWorkerThreads(n)` | IO 线程数 |
-| `enableSsl(cert, key)` | 启用 HTTPS；返回 false 表示失败 |
-
-### 生命周期
+### 服务配置与生命周期
 
 | 方法 | 说明 |
 |------|------|
-| `start()` | 启动服务（非阻塞）；返回 0 成功 |
+| `setHost(host)` | 设置监听主机文本 |
+| `setPort(port)` | 设置 HTTP 端口 |
+| `setHttpsPort(port)` | 设置 HTTPS 端口 |
+| `setWorkerThreads(count)` | 设置 IO worker 数量 |
+| `setKeepaliveTimeout(ms)` | 设置 keep-alive 超时 |
+| `setLimitRate(kbps)` | 设置发送速率限制；负值表示不限速 |
+| `setServerName(names)` | 设置允许的 Host 名称列表 |
+| `serverNames()` | 返回规范化后的 Host 名称集合 |
+| `isAllowedHost(host)` | 判断 Host 是否允许 |
+| `enableSsl(cert, key)` | 使用证书和私钥启用 HTTPS |
+| `start()` | 非阻塞启动服务；返回 0 表示成功 |
 | `stop()` | 停止服务 |
-| `cleanupAsync()` | 清理全局异步线程池 |
+| `connectionNum()` | 返回活跃连接数 |
+| `workerThreadsCount()` | 返回 worker 数量 |
+| `makeAsyncDispatcher()` | 创建基于 libhv async 的任务派发器 |
+| `cleanupAsync()` | 清理全局异步执行器 |
 
-### 监控
+## ServerTransport
 
-| 方法 | 说明 |
-|------|------|
-| `connectionNum()` | 当前活跃连接数 |
-| `workerThreadsCount()` | 工作线程数 |
-
-### 异步
+`ServerTransport` 是服务端传输接口：
 
 | 方法 | 说明 |
 |------|------|
-| `makeAsyncDispatcher()` | 返回异步任务派发器，用于 `Router::setAsyncDispatcher()` |
+| `start()` / `stop()` | 启动或停止服务 |
+| `setRouter(router)` | 设置 Router |
+| `connectionCount()` | 获取活跃连接数 |
+| `type()` | 返回协议类型文本 |
 
----
+`HvServerTransport` 提供基于 libhv 的 HTTP/HTTPS 实现，并支持端口、证书、静态目录及高级 `HttpServer`/`HttpService` 配置。
+
+## 客户端传输
+
+`ITransport` 统一 HTTP、HTTPS、TCP 和 WebSocket 客户端调用：
+
+| 方法 | 说明 |
+|------|------|
+| `connect()` / `disconnect()` | 管理连接 |
+| `isConnected()` | 判断连接状态 |
+| `sendRequest(request, response)` | 发送请求 |
+| `receiveResponse(response)` | 接收后续响应或消息 |
+| `getTransportType()` | 返回传输类型 |
+
+`TransportFactory::create(type)` 支持 `http`、`https`、`tcp`、`websocket`、`ws` 和 `wss`。具体参数结构见 `TransportTypes.hpp`。
+
+## 文件传输
+
+`IFileTransfer::send(Context&, TransferParams)` 定义服务端文件发送策略。
+
+`TransferParams` 包含文件标识、展示名、处置方式、大小、Range 边界和完成回调。`TransferStats` 提供传输次数、字节数、活跃数、错误数和累计耗时统计。
+
+`FileTransferFactory::create(mode, accelPrefix)` 支持：
+
+| mode | 行为 |
+|------|------|
+| `legacy` | 小文件进入响应体，大文件使用兼容流式路径 |
+| `stream` | 使用 writer 事件驱动分块发送 |
+| `auto` 或空值 | 当前选择 `stream` |
+| `accel` | 设置内部重定向响应头，由前置代理发送文件 |
+
+未知 mode 返回空指针。
 
 ## HttpConstants
 
-HTTP 状态码和方法的命名空间常量。值与 libhv 枚举保持一致（通过 `static_assert` 编译期校验）。
+`HttpStatus` 的数值遵循 libhv，核心状态通过 `static_assert` 进行编译期校验。常量包含 `Next`、`Close`、常用 2xx/4xx/5xx 状态以及 Range 响应相关状态。
 
-### HttpStatus
+`HttpMethod` 提供 DELETE、GET、HEAD、POST、PUT、CONNECT、OPTIONS、TRACE 和 PATCH 的数值常量。
 
-| 常量 | 值 | 说明 |
-|------|-----|------|
-| `Next` | 0 | 中间件放行 |
-| `Close` | -100 | 关闭连接，不发送 HTTP 响应 |
-| `Ok` | 200 | |
-| `NoContent` | 204 | |
-| `BadRequest` | 400 | |
-| `Unauthorized` | 401 | |
-| `Forbidden` | 403 | |
-| `NotFound` | 404 | |
-| `TooManyRequests` | 429 | |
-| `InternalError` | 500 | |
+## 设计约束
 
-### HttpMethod
-
-| 常量 | 值 |
-|------|-----|
-| `DELETE_` | 0 |
-| `GET` | 1 |
-| `HEAD` | 2 |
-| `POST` | 3 |
-| `PUT` | 4 |
-| `CONNECT` | 5 |
-| `OPTIONS` | 6 |
-| `TRACE` | 7 |
-| `PATCH` | 28 |
-
----
-
-## IniConfig
-
-INI 配置文件解析，opaque pointer 隐藏底层实现。
-
-### 加载 / 保存
-
-| 方法 | 说明 |
-|------|------|
-| `loadFromFile(path)` | 从文件加载；返回 true 成功 |
-| `loadFromMem(content)` | 从内存字符串加载 |
-| `save()` | 保存到原文件 |
-| `saveAs(path)` | 保存到指定文件 |
-| `unload()` | 卸载 / 清空 |
-
-### 读取
-
-| 方法 | 说明 |
-|------|------|
-| `getString(key, section)` | 获取字符串值 |
-| `getInt(key, section, def)` | 获取整数值 |
-| `getBool(key, section, def)` | 获取布尔值 |
-| `getFloat(key, section, def)` | 获取浮点值 |
-
-### 写入
-
-| 方法 | 说明 |
-|------|------|
-| `setString(key, val, section)` | 设置字符串值 |
-| `setInt(key, val, section)` | 设置整数值 |
-| `setBool(key, val, section)` | 设置布尔值 |
-| `setFloat(key, val, section)` | 设置浮点值 |
-
-### 枚举
-
-| 方法 | 说明 |
-|------|------|
-| `sections()` | 返回所有 section 名称 |
-| `keys(section)` | 返回指定 section 下所有键名 |
-
----
-
-## Base64
-
-Base64 编解码。
-
-| 方法 | 说明 |
-|------|------|
-| `encode(data, len)` | 编码 `unsigned char*` → `std::string` |
-| `decode(data, len)` | 解码 `const char*` → `std::string` |
-
-注意：`len=0` 时行为未定义（上游 libhv 约束）。
-
----
-
-## LogConfig
-
-日志配置。
-
-| 方法 | 说明 |
-|------|------|
-| `setFile(filepath)` | 设置日志文件路径 |
-| `setMaxFileSize(bytes)` | 设置单文件最大大小 |
-| `setRemainDays(days)` | 设置日志保留天数 |
-| `setLevel(level)` | 设置日志级别 |
-
-### Level 枚举
-
-| 值 | 名称 |
-|----|------|
-| 0 | `kDebug` |
-| 1 | `kInfo` |
-| 2 | `kWarn` |
-| 3 | `kError` |
+1. 公共 handler 使用 `Context&`，业务层不直接持有 libhv 请求或响应指针。
+2. 核心接口保持 C++11 兼容。
+3. 中间件通过 Context KV 传递内部数据，不需要构造内部 HTTP header。
+4. 异步流式策略必须显式接管并结束响应生命周期。
+5. 传输工厂对未知类型返回空指针，调用方必须检查结果。
