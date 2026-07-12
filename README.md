@@ -102,18 +102,7 @@ find_package(intertwine_cpp_framework REQUIRED)
 target_link_libraries(your_target PRIVATE intertwine_cpp_framework)
 ```
 
-## 模块
-
-| 分类 | 主要组件 | 用途 |
-|------|----------|------|
-| 核心框架 | `Application`、`Router`、`Context`、`MiddlewareChain` | 服务生命周期、路由、中间件和请求响应封装 |
-| 服务端传输 | `ServerTransport`、`HvServerTransport` | 基于 libhv 的 HTTP/HTTPS 服务端适配 |
-| 客户端传输 | `ITransport`、`TransportFactory` | HTTP、HTTPS、TCP 和 WebSocket 请求传输 |
-| 文件传输 | `IFileTransfer`、`FileTransferFactory` | 内存响应、事件驱动流式发送和代理加速 |
-| 并发 | `SupervisedThreadPool`、`LockfreeQueue`、`SPSCQueue` | 异步任务、无锁队列和流量控制 |
-| 工具 | `IniConfig`、`Logger`、`JwtUtil`、`PasswordUtil` 等 | 配置、安全、日志、序列化和通用能力 |
-
-完整说明：
+## 文档导航
 
 - [API 参考](doc/API.md)
 - [架构说明](doc/Architecture.md)
@@ -127,13 +116,7 @@ target_link_libraries(your_target PRIVATE intertwine_cpp_framework)
 
 Boost、OpenSSL、spdlog、fmt、nlohmann/json 和 GTest 等依赖由构建流程通过 vcpkg 解析。
 
-## 测试
-
-CMake 当前注册 20 个测试可执行程序，覆盖核心框架、配置与安全工具、日志和并发容器。
-
-```bash
-./build.sh --test
-```
+测试入口为 `./build.sh --test`；覆盖范围与约束见 [Architecture.md](doc/Architecture.md)。
 
 ## 依赖项目
 

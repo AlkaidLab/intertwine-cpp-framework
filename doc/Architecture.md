@@ -78,25 +78,6 @@ intertwine-cpp-framework/
 └── build.ps1         # Windows 构建入口
 ```
 
-## 构建与安装
-
-```bash
-./build.sh
-./build.sh --test
-./build.sh --clean --test
-./build.sh --vcpkg-root ../vcpkg
-./build.sh --install-dir ./out/install
-```
-
-安装目录包含：
-
-```text
-<install-dir>/
-├── include/intertwine/fw/
-├── lib/libintertwine_cpp_framework.a
-└── lib/cmake/intertwine_cpp_framework/intertwine_cpp_framework-config.cmake
-```
-
 ## libhv 缓存构建
 
 libhv 安装产物缓存在仓库的 `build_cache/libhv_install/`，中间构建目录为 `build_cache/libhv_build/`。仅执行框架的 `--clean` 不保证重建 libhv。
@@ -118,12 +99,8 @@ rm -rf build_cache/libhv_install build_cache/libhv_build build
 4. 中间件内部数据优先使用 Context KV，不借用外部可见响应头。
 5. 子模块提交必须固定，构建不得依赖未记录的工作站状态。
 
-## 测试
+## 构建与测试
 
-CMake 当前注册 20 个测试可执行程序，覆盖核心框架、并发组件、配置与安全工具及日志能力。
+构建命令、安装目录和最小集成示例见 [README.md](../README.md)。
 
-统一入口：
-
-```bash
-./build.sh --test
-```
+`./build.sh --test` 会构建并运行框架测试；测试覆盖核心请求流程、传输策略、并发组件及基础工具。
