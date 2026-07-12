@@ -102,11 +102,19 @@ find_package(intertwine_cpp_framework REQUIRED)
 target_link_libraries(your_target PRIVATE intertwine_cpp_framework)
 ```
 
-## 文档导航
+## 文档
+
+中文（默认）：
 
 - [API 参考](doc/API.md)
 - [架构说明](doc/Architecture.md)
 - [模块参考](doc/Modules.md)
+
+English:
+
+- [API Reference](doc_en/API.md)
+- [Architecture](doc_en/Architecture.md)
+- [Module Guide](doc_en/Modules.md)
 
 ## 构建要求
 
