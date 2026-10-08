@@ -1,4 +1,5 @@
 #include "LegacyTransfer.hpp"
+#include "FileTransferHeaders.hpp"
 #include "intertwine/fw/Context.hpp"
 #include "intertwine/fw/HttpConstants.hpp"
 #include <boost/function.hpp>
@@ -121,21 +122,6 @@ bool runOnWriterLoopSync(hv::HttpResponseWriter* writer, boost::function<void()>
     return true;
 }
 
-/** RFC 2616 safe filename for Content-Disposition (ASCII only, replace others) */
-std::string safeFilenameForHeader(const std::string& name) {
-    std::string safe;
-    safe.reserve(name.size());
-    for (size_t i = 0; i < name.size(); ++i) {
-        char ch = name[i];
-        if (ch >= 0x20 && ch < 0x7F && ch != '"' && ch != '\\') {
-            safe += ch;
-        } else {
-            safe += '_';
-        }
-    }
-    return safe;
-}
-
 } // namespace
 
 void LegacyTransfer::send(Context& c, const TransferParams& params) {
@@ -147,9 +133,8 @@ void LegacyTransfer::send(Context& c, const TransferParams& params) {
     auto startTime = m_stats.recordStart(sendLen);
 
     /* ── Headers ── */
-    std::string disposition = params.inlineDisposition ? "inline" : "attachment";
     c.setHeader("Content-Disposition",
-                disposition + "; filename=\"" + safeFilenameForHeader(params.displayName) + "\"");
+                fileContentDisposition(params.displayName, params.inlineDisposition));
     c.setHeader("Accept-Ranges", "bytes");
     c.setContentTypeByFilename(params.displayName.c_str());
 

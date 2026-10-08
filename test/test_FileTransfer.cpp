@@ -1,5 +1,6 @@
 #include "intertwine/fw/IFileTransfer.hpp"
 #include "intertwine/fw/Context.hpp"
+#include "../src/FileTransferHeaders.hpp"
 #include <gtest/gtest.h>
 #include <hv/HttpMessage.h>
 #include <boost/thread.hpp>
@@ -8,6 +9,36 @@
 
 namespace intertwine {
 namespace fw {
+
+TEST(FileTransferHeaders, PreservesUtf8Filename) {
+    const std::string name = "\xe4\xb8\xad\xe6\x96\x87 report.txt";
+    EXPECT_EQ("attachment; filename=\"______ report.txt\"; "
+              "filename*=UTF-8''%E4%B8%AD%E6%96%87%20report.txt",
+              fileContentDisposition(name, false));
+}
+
+TEST(FileTransferHeaders, EncodesDelimitersAndPreventsHeaderInjection) {
+    const std::string header = fileContentDisposition("a\"\\\r\n;%'.txt", true);
+    EXPECT_EQ("inline; filename=\"a____;%'.txt\"; "
+              "filename*=UTF-8''a%22%5C%0D%0A%3B%25%27.txt", header);
+    EXPECT_EQ(std::string::npos, header.find('\r'));
+    EXPECT_EQ(std::string::npos, header.find('\n'));
+}
+
+TEST(AccelTransfer, UsesUtf8DispositionForDownloadAndPreview) {
+    auto transfer = FileTransferFactory::create("accel", "/internal/");
+    HttpRequest req;
+    HttpResponse resp;
+    Context ctx(&req, &resp);
+    TransferParams params;
+    params.physicalPath = "/tmp/file.bin";
+    params.displayName = "\xe4\xb8\xad\xe6\x96\x87.zip";
+    transfer->send(ctx, params);
+    EXPECT_EQ(fileContentDisposition(params.displayName, false), resp.GetHeader("Content-Disposition"));
+    params.inlineDisposition = true;
+    transfer->send(ctx, params);
+    EXPECT_EQ(fileContentDisposition(params.displayName, true), resp.GetHeader("Content-Disposition"));
+}
 
 /* ── TransferStats ─────────────────────────────────── */
 
@@ -230,7 +261,7 @@ TEST(LegacyTransfer, SmallFileCallsOnComplete) {
 
     TransferParams tp;
     tp.physicalPath = path;
-    tp.displayName = "hello.txt";
+    tp.displayName = "\xe4\xb8\xad\xe6\x96\x87.txt";
     tp.fileSize = 11;
 
     bool completeCalled = false;
@@ -242,6 +273,7 @@ TEST(LegacyTransfer, SmallFileCallsOnComplete) {
     EXPECT_TRUE(completeCalled);
     EXPECT_TRUE(completeSuccess);
     EXPECT_EQ(resp.status_code, 200);
+    EXPECT_EQ(fileContentDisposition(tp.displayName, false), resp.GetHeader("Content-Disposition"));
 
     std::remove(path.c_str());
 }

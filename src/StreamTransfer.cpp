@@ -4,6 +4,7 @@
 //   pump() 在 EPOLLOUT 事件中读取磁盘块 → WriteBody → 直到 remaining == 0 → End()
 
 #include "StreamTransfer.hpp"
+#include "FileTransferHeaders.hpp"
 #include "intertwine/fw/Context.hpp"
 #include "intertwine/fw/HttpConstants.hpp"
 #include <boost/function.hpp>
@@ -78,21 +79,6 @@ bool postToWriterLoop(hv::HttpResponseWriter* writer, boost::function<void()> fn
     payload->ev.userdata = payload;
     hloop_post_event(loop, &payload->ev);
     return true;
-}
-
-/** RFC 2616 safe filename for Content-Disposition (ASCII only) */
-std::string safeFilenameForHeader(const std::string& name) {
-    std::string safe;
-    safe.reserve(name.size());
-    for (size_t i = 0; i < name.size(); ++i) {
-        char ch = name[i];
-        if (ch >= 0x20 && ch < 0x7F && ch != '"' && ch != '\\') {
-            safe += ch;
-        } else {
-            safe += '_';
-        }
-    }
-    return safe;
 }
 
 void scheduleCleanup(const std::shared_ptr<TransferState>& s) {
@@ -228,9 +214,8 @@ void StreamTransfer::send(Context& c, const TransferParams& params) {
     state->startTime = m_stats.recordStart(sendLen);
 
     /* 设置响应头（Context 仍存活） */
-    std::string disposition = params.inlineDisposition ? "inline" : "attachment";
     c.setHeader("Content-Disposition",
-                disposition + "; filename=\"" + safeFilenameForHeader(params.displayName) + "\"");
+                fileContentDisposition(params.displayName, params.inlineDisposition));
     c.setHeader("Accept-Ranges", "bytes");
     c.setContentTypeByFilename(params.displayName.c_str());
 
