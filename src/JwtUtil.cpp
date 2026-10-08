@@ -2,6 +2,7 @@
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
 #include <openssl/crypto.h>
+#include <openssl/rand.h>
 #include <boost/chrono.hpp>
 #include <boost/thread/lock_guard.hpp>
 #include <cstring>
@@ -125,9 +126,19 @@ std::string JwtUtil::sign(const std::string& secret, int expireSeconds) {
     int64_t now = nowSeconds();
     int64_t exp = now + expireSeconds;
 
+    unsigned char randomId[16];
+    if (RAND_bytes(randomId, sizeof(randomId)) != 1) return "";
+    static const char hex[] = "0123456789abcdef";
+    std::string jti;
+    for (unsigned char byte : randomId) {
+        jti += hex[byte >> 4];
+        jti += hex[byte & 0x0f];
+    }
+
     std::string header = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
     std::ostringstream payload;
-    payload << "{\"sub\":\"admin\",\"iat\":" << now << ",\"exp\":" << exp << "}";
+    payload << "{\"sub\":\"admin\",\"iat\":" << now << ",\"exp\":" << exp
+            << ",\"jti\":\"" << jti << "\"}";
 
     std::string headerEnc = base64UrlEncode(header);
     std::string payloadEnc = base64UrlEncode(payload.str());

@@ -13,6 +13,19 @@ TEST(JwtUtil, SignAndVerify) {
     EXPECT_TRUE(JwtUtil::verify(token, kSecret));
 }
 
+TEST(JwtUtil, RevokedSessionDoesNotInvalidateImmediateNewLogin) {
+    std::string previous = JwtUtil::sign(kSecret, 3600);
+    ASSERT_FALSE(previous.empty());
+    JwtUtil::revoke(previous);
+    for (int i = 0; i < 10; ++i) {
+        std::string fresh = JwtUtil::sign(kSecret, 3600);
+        ASSERT_FALSE(fresh.empty());
+        EXPECT_NE(previous, fresh);
+        EXPECT_TRUE(JwtUtil::verify(fresh, kSecret));
+    }
+    EXPECT_FALSE(JwtUtil::verify(previous, kSecret));
+}
+
 TEST(JwtUtil, VerifyWrongSecret) {
     std::string token = JwtUtil::sign(kSecret, 3600);
     EXPECT_FALSE(JwtUtil::verify(token, "wrong_secret"));
