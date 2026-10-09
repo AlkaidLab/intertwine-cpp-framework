@@ -59,6 +59,8 @@ const std::string& Context::path() const {
     return m_impl->req->path;
 }
 
+std::string Context::routePath() const { return m_impl->req->Path(); }
+
 std::string Context::param(const char* key) const {
     return m_impl->req->GetParam(key);
 }

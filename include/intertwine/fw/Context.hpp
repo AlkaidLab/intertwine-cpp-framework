@@ -31,6 +31,8 @@ class Context {
 
     /** Request path (e.g. "/api/fs/list") */
     const std::string& path() const;
+    /** Decoded routing path without query/fragment, matching libhv route selection. */
+    std::string routePath() const;
 
     /** URL path/query parameter (libhv stores both uniformly) */
     std::string param(const char* key) const;

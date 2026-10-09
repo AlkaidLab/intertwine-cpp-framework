@@ -2,9 +2,73 @@
 #include <gtest/gtest.h>
 #include <hv/HttpMessage.h>
 #include <hv/HttpService.h>
+#include <hv/HttpContext.h>
 
 namespace intertwine {
 namespace fw {
+
+namespace {
+struct TestReceiver : RequestBodyReceiver {
+    std::string& bytes;
+    int& destroyed;
+    bool& completeCalled;
+    TestReceiver(std::string& b, int& d, bool& c) : bytes(b), destroyed(d), completeCalled(c) {}
+    ~TestReceiver() { ++destroyed; }
+    void write(Context&, const char* data, size_t size) override { bytes.append(data, size); }
+    void complete(Context& c) override { completeCalled = true; c.json(200, "{\"uploaded\":true}"); }
+};
+HttpContextPtr streamContext() {
+    auto ctx = std::make_shared<hv::HttpContext>();
+    ctx->request = std::make_shared<HttpRequest>();
+    ctx->response = std::make_shared<HttpResponse>();
+    ctx->writer = std::make_shared<hv::HttpResponseWriter>(nullptr, ctx->response);
+    ctx->request->method = HTTP_PUT; ctx->request->path = "/stream";
+    return ctx;
+}
+}
+
+TEST(RouterTest, StreamReceivesBytesWithoutAccumulatingBody) {
+    std::string bytes; int destroyed = 0; bool complete = false; int middleware = 0;
+    Router router;
+    router.use([&](Context& c, Next next) { ++middleware; return next(); });
+    router.putStream("/stream", [&](Context&) { return std::make_shared<TestReceiver>(bytes, destroyed, complete); });
+    hv::HttpService service; router.bind(service);
+    auto ctx = streamContext(); http_handler* handler = nullptr;
+    ASSERT_EQ(0, service.GetRoute(ctx->request.get(), &handler));
+    ASSERT_TRUE(handler->state_handler);
+    handler->state_handler(ctx, HP_HEADERS_COMPLETE, nullptr, 0);
+    handler->state_handler(ctx, HP_BODY, "abc", 3);
+    handler->state_handler(ctx, HP_BODY, "def", 3);
+    EXPECT_TRUE(ctx->request->body.empty());
+    EXPECT_EQ("abcdef", bytes); EXPECT_FALSE(complete);
+    EXPECT_EQ(200, handler->state_handler(ctx, HP_MESSAGE_COMPLETE, nullptr, 0));
+    EXPECT_TRUE(complete); EXPECT_EQ(1, middleware); EXPECT_EQ(1, destroyed);
+}
+
+TEST(RouterTest, StreamDisconnectDiscardsReceiver) {
+    std::string bytes; int destroyed = 0; bool complete = false;
+    Router router;
+    router.putStream("/stream", [&](Context&) { return std::make_shared<TestReceiver>(bytes, destroyed, complete); });
+    hv::HttpService service; router.bind(service);
+    auto ctx = streamContext(); http_handler* handler = nullptr;
+    ASSERT_EQ(0, service.GetRoute(ctx->request.get(), &handler));
+    handler->state_handler(ctx, HP_HEADERS_COMPLETE, nullptr, 0);
+    handler->state_handler(ctx, HP_BODY, "abc", 3);
+    handler->state_handler(ctx, HP_ERROR, nullptr, 0);
+    EXPECT_EQ(1, destroyed); EXPECT_FALSE(complete);
+}
+
+TEST(RouterTest, StreamOwnerReleaseDiscardsRejectedCompletion) {
+    std::string bytes; int destroyed = 0; bool complete = false;
+    Router router;
+    router.putStream("/stream", [&](Context&) { return std::make_shared<TestReceiver>(bytes, destroyed, complete); });
+    hv::HttpService service; router.bind(service);
+    auto ctx = streamContext(); http_handler* handler = nullptr;
+    ASSERT_EQ(0, service.GetRoute(ctx->request.get(), &handler));
+    handler->state_handler(ctx, HP_HEADERS_COMPLETE, nullptr, 0);
+    ctx->writer->onclose = nullptr;
+    EXPECT_EQ(1, destroyed); EXPECT_FALSE(complete);
+}
 
 TEST(RouterTest, RouteCount) {
     Router router;

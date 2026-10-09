@@ -63,6 +63,13 @@ TEST_F(ContextKV, Path) {
     EXPECT_EQ(ctx.path(), "/test");
 }
 
+TEST_F(ContextKV, RoutingPathMatchesDecodedRouteWithoutQuery) {
+    req.path = "/api/%61dmin/local-mount/upload?name=file.bin";
+    Context ctx(&req, &resp);
+    EXPECT_EQ("/api/admin/local-mount/upload", ctx.routePath());
+    EXPECT_EQ(req.path, ctx.fullPath());
+}
+
 TEST_F(ContextKV, Header) {
     req.SetHeader("X-Test", "hello");
     Context ctx(&req, &resp);

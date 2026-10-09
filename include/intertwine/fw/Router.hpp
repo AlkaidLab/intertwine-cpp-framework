@@ -24,6 +24,16 @@ namespace fw {
 /** Unified handler signature: interacts only through Context& */
 using Handler = std::function<void(Context&)>;
 
+/** Receives raw request bytes without accumulating Context::body().
+ * Destruction must discard unfinished work (disconnect or middleware rejection). */
+class RequestBodyReceiver {
+public:
+    virtual ~RequestBodyReceiver() {}
+    virtual void write(Context&, const char* data, size_t size) = 0;
+    virtual void complete(Context&) = 0;
+};
+using RequestBodyFactory = std::function<std::shared_ptr<RequestBodyReceiver>(Context&)>;
+
 class Router {
 public:
     Router();
@@ -38,6 +48,8 @@ public:
     void get(const char* path, Handler handler);
     void post(const char* path, Handler handler);
     void put(const char* path, Handler handler);
+    /** Factory runs after headers; nullptr rejects the request using Context's error response. */
+    void putStream(const char* path, RequestBodyFactory factory);
     void del(const char* path, Handler handler);
     void patch(const char* path, Handler handler);
 
@@ -81,6 +93,7 @@ private:
         std::string path;
         Handler handler;
         bool async;
+        RequestBodyFactory bodyFactory;
     };
 
     MiddlewareChain m_middlewares;
