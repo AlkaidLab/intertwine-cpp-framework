@@ -18,6 +18,8 @@ namespace HttpStatus {
     static const int Forbidden = 403;
     static const int NotFound = 404;
     static const int PayloadTooLarge = 413;
+    static const int PreconditionFailed = 412;
+    static const int NotModified = 304;
     static const int TooManyRequests = 429;
     static const int InternalError = 500;
 }
