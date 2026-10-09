@@ -46,15 +46,17 @@ public:
     /* -- Route registration -- */
 
     void get(const char* path, Handler handler);
+    void getAsync(const char* path, Handler handler);
     void post(const char* path, Handler handler);
     void put(const char* path, Handler handler);
     /** Factory runs after headers; nullptr rejects the request using Context's error response. */
     void putStream(const char* path, RequestBodyFactory factory);
     void del(const char* path, Handler handler);
     void patch(const char* path, Handler handler);
-
-    /** Async route (dispatched via asyncDispatcher to thread pool) */
-    void getAsync(const char* path, Handler handler);
+    /** Register an HTTP method not used by the JSON API (for example WebDAV). */
+    void custom(const char* method, const char* path, Handler handler);
+    /** Async variant for streaming methods such as WebDAV GET. */
+    void customAsync(const char* method, const char* path, Handler handler);
 
     /**
      * Set an async dispatcher.
@@ -86,10 +88,11 @@ public:
     size_t routeCount() const { return m_routes.size(); }
 
 private:
-    enum class Method { GET, POST, PUT, DEL, PATCH };
+    enum class Method { GET, POST, PUT, DEL, PATCH, CUSTOM };
 
     struct Route {
         Method method;
+        std::string customMethod;
         std::string path;
         Handler handler;
         bool async;

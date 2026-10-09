@@ -33,6 +33,13 @@ namespace HttpMethod {
     static const int OPTIONS = 6;
     static const int TRACE = 7;
     static const int PATCH = 28;
+    static const int COPY = 8;
+    static const int LOCK = 9;
+    static const int MKCOL = 10;
+    static const int MOVE = 11;
+    static const int PROPFIND = 12;
+    static const int PROPPATCH = 13;
+    static const int UNLOCK = 15;
 }
 
 } // namespace fw

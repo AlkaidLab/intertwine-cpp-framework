@@ -53,6 +53,18 @@ void Router::getAsync(const char* path, Handler handler) {
     m_routes.push_back(std::move(r));
 }
 
+void Router::custom(const char* method, const char* path, Handler handler) {
+    Route r; r.method = Method::CUSTOM; r.customMethod = method; r.path = path;
+    r.handler = std::move(handler); r.async = false;
+    m_routes.push_back(std::move(r));
+}
+
+void Router::customAsync(const char* method, const char* path, Handler handler) {
+    Route r; r.method = Method::CUSTOM; r.customMethod = method; r.path = path;
+    r.handler = std::move(handler); r.async = true;
+    m_routes.push_back(std::move(r));
+}
+
 void Router::setAsyncDispatcher(std::function<void(std::function<void()>)> dispatcher) {
     m_asyncDispatcher = std::move(dispatcher);
 }
@@ -200,6 +212,14 @@ void Router::bind(hv::HttpService& service) {
         const Route& r = m_routes[i];
         if (r.bodyFactory) {
             service.PUT(r.path.c_str(), makeBodyHandler(r.bodyFactory, chain));
+            continue;
+        }
+        if (r.method == Method::CUSTOM) {
+            if (r.async) {
+                service.Handle(r.customMethod.c_str(), r.path.c_str(), makeAsyncHandler(r.handler, chain, m_asyncDispatcher, m_asyncTaskTracker));
+            } else {
+                service.Handle(r.customMethod.c_str(), r.path.c_str(), makeSyncHandler(r.handler, chain));
+            }
             continue;
         }
         if (r.async) {

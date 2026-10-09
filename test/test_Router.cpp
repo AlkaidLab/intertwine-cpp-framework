@@ -88,6 +88,29 @@ TEST(RouterTest, AsyncRoute) {
     EXPECT_EQ(router.routeCount(), 1u);
 }
 
+TEST(RouterTest, CustomMethodRoute) {
+    Router router;
+    bool called = false;
+    router.custom("PROPFIND", "/dav/*", [&called](Context& ctx) {
+        called = true;
+        ctx.setStatus(207);
+    });
+    EXPECT_EQ(router.routeCount(), 1u);
+    hv::HttpService service;
+    router.bind(service);
+    HttpRequest req;
+    req.method = HTTP_PROPFIND;
+    req.path = "/dav/share/file.txt";
+    HttpResponse resp;
+    http_handler* handler = NULL;
+    ASSERT_EQ(0, service.GetRoute(&req, &handler));
+    ASSERT_TRUE(handler != NULL);
+    ASSERT_TRUE(handler->sync_handler != NULL);
+    handler->sync_handler(&req, &resp);
+    EXPECT_TRUE(called);
+    EXPECT_EQ(resp.status_code, 207);
+}
+
 TEST(RouterTest, BindSyncRoutes) {
     Router router;
     bool called = false;
