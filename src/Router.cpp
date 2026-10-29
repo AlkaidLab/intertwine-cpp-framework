@@ -93,6 +93,7 @@ makeSyncHandler(const Handler& handler,
             h(c);
             return c.status() ? c.status() : 200;
         });
+        ctx.clearRequestState();
         return ctx.status() ? ctx.status() : 200;
     };
 }
@@ -108,9 +109,9 @@ makeAsyncHandler(const Handler& handler,
 
         auto task = [chain, handler, httpCtx, tracker]() {
             bool streamingHandoff = false;
+            const HttpContextPtr* ptr = &httpCtx;
+            Context ctx(static_cast<const void*>(ptr));
             try {
-                const HttpContextPtr* ptr = &httpCtx;
-                Context ctx(static_cast<const void*>(ptr));
                 const Handler& h = handler;
                 chain->execute(ctx, [&h](Context& c) -> int {
                     h(c);
@@ -127,6 +128,7 @@ makeAsyncHandler(const Handler& handler,
                 httpCtx->writer->state == hv::HttpResponseWriter::SEND_BEGIN) {
                 httpCtx->writer->End();
             }
+            ctx.clearRequestState();
             if (tracker) tracker(-1);
         };
 
@@ -162,17 +164,19 @@ http_state_handler makeBodyHandler(const RequestBodyFactory& factory, const std:
             if (found != states->values.end()) state = found->second.lock();
             if (event == HP_ERROR || event == HP_MESSAGE_COMPLETE) states->values.erase(httpCtx.get());
         }
+        Context ctx(static_cast<const void*>(&httpCtx));
         if (event == HP_ERROR) {
             if (httpCtx->writer) httpCtx->writer->onclose = nullptr;
+            ctx.clearRequestState();
             return 0;
         }
-        Context ctx(static_cast<const void*>(&httpCtx));
         try {
             if (event == HP_HEADERS_COMPLETE) {
                 state = std::make_shared<BodyState>();
                 state->receiver = factory(ctx);
                 if (!state->receiver) {
                     if (ctx.status() < 400) ctx.error(500, "stream_receiver_unavailable");
+                    ctx.clearRequestState();
                 } else if (httpCtx->writer) {
                     // Resetting the writer also releases this owner if a global middleware rejects completion.
                     httpCtx->writer->onclose = [state]() { state->receiver.reset(); };
@@ -188,12 +192,14 @@ http_state_handler makeBodyHandler(const RequestBodyFactory& factory, const std:
                 if (!state || !state->receiver) throw std::runtime_error("request stream is unavailable");
                 chain->execute(ctx, [state](Context& c) -> int { state->receiver->complete(c); return c.status(); });
                 if (httpCtx->writer) httpCtx->writer->onclose = nullptr;
+                ctx.clearRequestState();
                 return ctx.status();
             } else return 0;
         } catch (const std::exception& error) {
             ctx.error(400, "request_stream_error", error.what());
         } catch (...) { ctx.error(500, "request_stream_error"); }
         if (state) state->receiver.reset();
+        ctx.clearRequestState();
         if (httpCtx->writer) {
             httpCtx->writer->onclose = nullptr;
             ctx.setHeader("Connection", "close");

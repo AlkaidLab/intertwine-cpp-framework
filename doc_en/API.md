@@ -59,7 +59,7 @@ The following methods require an asynchronous `ctx_handler` with an available wr
 
 `set(key, value)`, `get(key, defaultValue)`, and `has(key)` carry internal middleware state without exposing it through HTTP headers.
 
-`setRequestState(key, value)`, `requestState(key, defaultValue)`, `hasRequestState(key)`, and `eraseRequestState(key)` carry state across multiple `Context` objects for one HTTP request. Request state is stored in framework-owned request metadata, is never read from client headers, and is cleared when the request is reset.
+`setRequestState(key, value)`, `requestState(key, defaultValue)`, `hasRequestState(key)`, and `eraseRequestState(key)` carry state across multiple `Context` objects for one HTTP request. The framework stores this state outside client headers, and route integrations clear it when the request finishes.
 
 `TestContextBuilder` constructs test contexts with a method, path, headers, peer address text, and body while owning the underlying libhv objects.
 

@@ -2,10 +2,19 @@
 #include <hv/HttpMessage.h>
 #include <hv/HttpContext.h>
 #include <hv/HttpResponseWriter.h>
+#include <mutex>
 #include <unordered_map>
 
 namespace intertwine {
 namespace fw {
+
+namespace {
+
+typedef std::unordered_map<std::string, std::string> RequestStateMap;
+std::mutex g_requestStateMutex;
+std::unordered_map<const HttpRequest*, RequestStateMap> g_requestState;
+
+} // anonymous namespace
 
 struct Context::Impl {
     HttpRequest* req;
@@ -244,21 +253,37 @@ bool Context::has(const std::string& key) const {
 }
 
 void Context::setRequestState(const std::string& key, const std::string& val) {
-    m_impl->req->request_state[key] = val;
+    std::lock_guard<std::mutex> lock(g_requestStateMutex);
+    g_requestState[m_impl->req][key] = val;
 }
 
 std::string Context::requestState(const std::string& key, const std::string& def) const {
-    std::map<std::string, std::string>::const_iterator it =
-        m_impl->req->request_state.find(key);
-    return it == m_impl->req->request_state.end() ? def : it->second;
+    std::lock_guard<std::mutex> lock(g_requestStateMutex);
+    std::unordered_map<const HttpRequest*, RequestStateMap>::const_iterator requestIt =
+        g_requestState.find(m_impl->req);
+    if (requestIt == g_requestState.end()) return def;
+    RequestStateMap::const_iterator it = requestIt->second.find(key);
+    return it == requestIt->second.end() ? def : it->second;
 }
 
 bool Context::hasRequestState(const std::string& key) const {
-    return m_impl->req->request_state.find(key) != m_impl->req->request_state.end();
+    std::lock_guard<std::mutex> lock(g_requestStateMutex);
+    std::unordered_map<const HttpRequest*, RequestStateMap>::const_iterator requestIt =
+        g_requestState.find(m_impl->req);
+    return requestIt != g_requestState.end() &&
+           requestIt->second.find(key) != requestIt->second.end();
 }
 
 void Context::eraseRequestState(const std::string& key) {
-    m_impl->req->request_state.erase(key);
+    std::lock_guard<std::mutex> lock(g_requestStateMutex);
+    std::unordered_map<const HttpRequest*, RequestStateMap>::iterator requestIt =
+        g_requestState.find(m_impl->req);
+    if (requestIt != g_requestState.end()) requestIt->second.erase(key);
+}
+
+void Context::clearRequestState() {
+    std::lock_guard<std::mutex> lock(g_requestStateMutex);
+    g_requestState.erase(m_impl->req);
 }
 
 /* -- Request metadata -- */

@@ -96,6 +96,8 @@ class Context {
     std::string requestState(const std::string& key, const std::string& def = "") const;
     bool hasRequestState(const std::string& key) const;
     void eraseRequestState(const std::string& key);
+    /** Remove all request state owned by the current request. */
+    void clearRequestState();
 
     /* -- Request metadata -- */
 

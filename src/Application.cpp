@@ -22,7 +22,14 @@ struct Application::Impl {
     Impl() : httpsPort(0) {}
 };
 
-Application::Application() : m_impl(new Impl) {}
+Application::Application() : m_impl(new Impl) {
+    m_impl->service.postprocessor =
+        [](HttpRequest* req, HttpResponse* resp) -> int {
+            Context c(static_cast<void*>(req), static_cast<void*>(resp));
+            c.clearRequestState();
+            return c.status();
+        };
+}
 
 Application::~Application() {
     delete m_impl;
@@ -56,7 +63,10 @@ void Application::setPostprocessor(std::function<int(Context&)> fn) {
     m_impl->service.postprocessor =
         [fn](HttpRequest* req, HttpResponse* resp) -> int {
             Context c(static_cast<void*>(req), static_cast<void*>(resp));
-            return fn(c);
+            const int result = fn(c);
+            /* Async route tasks clear their state after they finish. */
+            if (c.header("X-Internal-Async").empty()) c.clearRequestState();
+            return result;
         };
 }
 

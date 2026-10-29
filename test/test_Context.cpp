@@ -58,6 +58,7 @@ TEST_F(ContextKV, RequestStateSurvivesContextRecreation) {
     Context second(&req, &resp);
     EXPECT_TRUE(second.hasRequestState("auth.admin_jwt_verified"));
     EXPECT_EQ(second.requestState("auth.admin_jwt_verified"), "1");
+    second.clearRequestState();
 }
 
 TEST_F(ContextKV, RequestStateDoesNotReadHttpHeaders) {
@@ -71,10 +72,10 @@ TEST_F(ContextKV, RequestStateDoesNotReadHttpHeaders) {
     EXPECT_FALSE(ctx.hasRequestState("auth.admin_jwt_verified"));
 }
 
-TEST_F(ContextKV, RequestStateClearsWithRequestReset) {
+TEST_F(ContextKV, RequestStateCanBeClearedForRequest) {
     Context ctx(&req, &resp);
     ctx.setRequestState("auth.admin_jwt_verified", "1");
-    req.Reset();
+    ctx.clearRequestState();
 
     Context nextRequest(&req, &resp);
     EXPECT_FALSE(nextRequest.hasRequestState("auth.admin_jwt_verified"));
