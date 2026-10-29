@@ -7,10 +7,6 @@
 namespace intertwine {
 namespace fw {
 
-static std::string requestStateHeaderName(const std::string& key) {
-    return "X-Intertwine-Request-State-" + key;
-}
-
 struct Context::Impl {
     HttpRequest* req;
     HttpResponse* resp;
@@ -248,20 +244,21 @@ bool Context::has(const std::string& key) const {
 }
 
 void Context::setRequestState(const std::string& key, const std::string& val) {
-    m_impl->req->SetHeader(requestStateHeaderName(key).c_str(), val);
+    m_impl->req->request_state[key] = val;
 }
 
 std::string Context::requestState(const std::string& key, const std::string& def) const {
-    const std::string value = m_impl->req->GetHeader(requestStateHeaderName(key).c_str());
-    return value.empty() ? def : value;
+    std::map<std::string, std::string>::const_iterator it =
+        m_impl->req->request_state.find(key);
+    return it == m_impl->req->request_state.end() ? def : it->second;
 }
 
 bool Context::hasRequestState(const std::string& key) const {
-    return !m_impl->req->GetHeader(requestStateHeaderName(key).c_str()).empty();
+    return m_impl->req->request_state.find(key) != m_impl->req->request_state.end();
 }
 
 void Context::eraseRequestState(const std::string& key) {
-    m_impl->req->headers.erase(requestStateHeaderName(key));
+    m_impl->req->request_state.erase(key);
 }
 
 /* -- Request metadata -- */

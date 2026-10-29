@@ -12,6 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LIBHV_DIR="$SCRIPT_DIR/third_party/libhv"
 BUILD_DIR="$SCRIPT_DIR/build_cache/libhv_build"
 INSTALL_DIR="$SCRIPT_DIR/build_cache/libhv_install"
+BUILD_STAMP="$INSTALL_DIR/.build-stamp"
 
 OPENSSL_ROOT=""
 
@@ -29,8 +30,15 @@ if [ ! -f "$LIBHV_DIR/CMakeLists.txt" ]; then
     exit 1
 fi
 
-# Reuse an existing archive for incremental builds.
-if [[ -f "$INSTALL_DIR/lib/libhv_static.a" || -f "$INSTALL_DIR/lib/libhv.a" ]]; then
+# Reuse an archive only when it was built from the current libhv source.
+# This covers both a new submodule commit and local source changes while
+# preventing stale headers and static libraries from being mixed.
+SOURCE_REV="$(git -C "$LIBHV_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
+SOURCE_DIFF="$(git -C "$LIBHV_DIR" diff --binary -- . 2>/dev/null | sha256sum | awk '{print $1}')"
+BUILD_SIGNATURE="source=$SOURCE_REV;diff=$SOURCE_DIFF;openssl=$OPENSSL_ROOT;io_uring=${WITH_IO_URING:-0}"
+if [[ -f "$BUILD_STAMP" && \
+      ( -f "$INSTALL_DIR/lib/libhv_static.a" || -f "$INSTALL_DIR/lib/libhv.a" ) && \
+      "$(cat "$BUILD_STAMP")" = "$BUILD_SIGNATURE" ]]; then
     echo "Reusing cached libhv ($INSTALL_DIR)"
     exit 0
 fi
@@ -41,6 +49,7 @@ cd "$BUILD_DIR"
 CMAKE_ARGS=(
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
+    -DCMAKE_INSTALL_LIBDIR=lib
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     -DBUILD_SHARED=OFF
     -DBUILD_STATIC=ON
@@ -75,6 +84,7 @@ echo "=== Building libhv ==="
 cmake -B "$BUILD_DIR" -S "$LIBHV_DIR" "${CMAKE_ARGS[@]}"
 cmake --build "$BUILD_DIR" -j"$(nproc 2>/dev/null || echo 4)"
 cmake --install "$BUILD_DIR"
+printf '%s\n' "$BUILD_SIGNATURE" > "$BUILD_STAMP"
 
 echo "libhv done:"
 ls -lh "$INSTALL_DIR/lib/"*hv* 2>/dev/null

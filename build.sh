@@ -114,13 +114,8 @@ fi
 echo "  vcpkg dependencies are ready"
 
 # ── [2/4] Build libhv ──
-if [[ ! -f "$LIBHV_INSTALL/lib/libhv_static.a" && \
-      ! -f "$LIBHV_INSTALL/lib/libhv.a" ]]; then
-    echo "[2/4] Building libhv..."
-    bash "$FW_DIR/build-libhv.sh" --openssl-root "$OPENSSL_ROOT"
-else
-    echo "[2/4] Reusing cached libhv"
-fi
+echo "[2/4] Building or validating libhv..."
+bash "$FW_DIR/build-libhv.sh" --openssl-root "$OPENSSL_ROOT"
 
 # Locate the produced libhv archive.
 LIBHV_LIB=""

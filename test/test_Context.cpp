@@ -60,12 +60,24 @@ TEST_F(ContextKV, RequestStateSurvivesContextRecreation) {
     EXPECT_EQ(second.requestState("auth.admin_jwt_verified"), "1");
 }
 
-TEST_F(ContextKV, RequestStateCanBeCleared) {
+TEST_F(ContextKV, RequestStateDoesNotReadHttpHeaders) {
     req.SetHeader("X-Intertwine-Request-State-auth.admin_jwt_verified", "spoofed");
     Context ctx(&req, &resp);
-    EXPECT_EQ(ctx.requestState("auth.admin_jwt_verified"), "spoofed");
+    EXPECT_FALSE(ctx.hasRequestState("auth.admin_jwt_verified"));
+    EXPECT_EQ(ctx.requestState("auth.admin_jwt_verified", "default"), "default");
+    ctx.setRequestState("auth.admin_jwt_verified", "1");
+    EXPECT_TRUE(ctx.hasRequestState("auth.admin_jwt_verified"));
     ctx.eraseRequestState("auth.admin_jwt_verified");
     EXPECT_FALSE(ctx.hasRequestState("auth.admin_jwt_verified"));
+}
+
+TEST_F(ContextKV, RequestStateClearsWithRequestReset) {
+    Context ctx(&req, &resp);
+    ctx.setRequestState("auth.admin_jwt_verified", "1");
+    req.Reset();
+
+    Context nextRequest(&req, &resp);
+    EXPECT_FALSE(nextRequest.hasRequestState("auth.admin_jwt_verified"));
 }
 
 // -- Request access --
