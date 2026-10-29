@@ -91,6 +91,12 @@ class Context {
     std::string get(const std::string& key, const std::string& def = "") const;
     bool has(const std::string& key) const;
 
+    /** Request-scoped state shared by Context instances for one HTTP request. */
+    void setRequestState(const std::string& key, const std::string& val);
+    std::string requestState(const std::string& key, const std::string& def = "") const;
+    bool hasRequestState(const std::string& key) const;
+    void eraseRequestState(const std::string& key);
+
     /* -- Request metadata -- */
 
     /** Request content length (body size declared by client) */
